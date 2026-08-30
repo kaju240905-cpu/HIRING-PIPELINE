@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  RECRUITER
+  INTERVIEWER
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStage {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  HIRED
+}
+
+enum ApplicationStatus {
+  ACTIVE
+  REJECTED
+}
+
+enum ActionType {
+  CREATED
+  STAGE_ADVANCED
+  REJECTED
+  REINSTATED
+  FEEDBACK_ADDED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+  
+  assignedApplications InterviewerAssignment[]
+  actionsPerformed     ApplicationHistory[]
+  interviewsCreated    Interview[]
+}
+
+model JobOpening {
+  id          String    @id @default(uuid())
+  title       String
+  department  String
+  description String
+  status      JobStatus @default(OPEN)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  applications Application[]
+}
+
+model Application {
+  id             String            @id @default(uuid())
+  jobId          String
+  job            JobOpening        @relation(fields: [jobId], references: [id])
+  candidateName  String
+  candidateEmail String
+  source         String
+  notes          String?
+  currentStage   ApplicationStage  @default(APPLIED)
+  status         ApplicationStatus @default(ACTIVE)
+  appliedAt      DateTime          @default(now())
+  stageEnteredAt DateTime          @default(now())
+  version        Int               @default(1)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  history           ApplicationHistory[]
+  assignments       InterviewerAssignment[]
+  interviews        Interview[]
+  stalledDismissals StalledAlertDismissal[]
+
+  @@index([jobId])
+  @@index([currentStage, status])
+  @@index([appliedAt])
+  @@index([updatedAt])
+}
+
+model InterviewerAssignment {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  interviewerId String
+  interviewer   User        @relation(fields: [interviewerId], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@unique([applicationId, interviewerId])
+}
+
+model Interview {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  scheduledAt   DateTime
+  createdAt     DateTime    @default(now())
+  createdBy     String
+  creator       User        @relation(fields: [createdBy], references: [id])
+}
+
+model ApplicationHistory {
+  id            String           @id @default(uuid())
+  applicationId String
+  application   Application      @relation(fields: [applicationId], references: [id])
+  actorId       String?
+  actor         User?            @relation(fields: [actorId], references: [id])
+  actionType    ActionType
+  oldStage      ApplicationStage?
+  newStage      ApplicationStage?
+  notes         String?
+  createdAt     DateTime         @default(now())
+}
+
+model StalledAlertDismissal {
+  id            String           @id @default(uuid())
+  applicationId String
+  application   Application      @relation(fields: [applicationId], references: [id])
+  stage         ApplicationStage
+  stageEnteredAt DateTime
+  dismissedAt   DateTime         @default(now())
+
+  @@unique([applicationId, stage, stageEnteredAt])
+}
