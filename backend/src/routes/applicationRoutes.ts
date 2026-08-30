@@ -1,12 +1,10 @@
 import { Router } from 'express';
 import { createApplication, listApplications } from '../controllers/applicationController';
-import { requireAuth, requireRecruiter } from '../auth';
 
 const router = Router();
 
-router.use(requireAuth);
-
-router.post('/', requireRecruiter, createApplication);
-router.get('/', listApplications); // Both recruiters and interviewers can list (filtered via logic)
+// Auth is a Phase 2 feature, endpoints are open in Phase 1
+router.post('/', createApplication);
+router.get('/', listApplications); 
 
 export default router;

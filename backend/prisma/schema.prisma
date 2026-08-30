@@ -65,7 +65,7 @@ model JobOpening {
 model Application {
   id             String            @id @default(uuid())
   jobId          String
-  job            JobOpening        @relation(fields: [jobId], references: [id])
+  job            JobOpening        @relation(fields: [jobId], references: [id], onDelete: Restrict)
   candidateName  String
   candidateEmail String
   source         String
@@ -92,9 +92,9 @@ model Application {
 model InterviewerAssignment {
   id            String      @id @default(uuid())
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id])
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   interviewerId String
-  interviewer   User        @relation(fields: [interviewerId], references: [id])
+  interviewer   User        @relation(fields: [interviewerId], references: [id], onDelete: Restrict)
   createdAt     DateTime    @default(now())
 
   @@unique([applicationId, interviewerId])
@@ -103,20 +103,21 @@ model InterviewerAssignment {
 model Interview {
   id            String      @id @default(uuid())
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id])
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   scheduledAt   DateTime
   createdAt     DateTime    @default(now())
   createdBy     String
-  creator       User        @relation(fields: [createdBy], references: [id])
+  creator       User        @relation(fields: [createdBy], references: [id], onDelete: Restrict)
 }
 
 model ApplicationHistory {
   id            String           @id @default(uuid())
   applicationId String
-  application   Application      @relation(fields: [applicationId], references: [id])
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   actorId       String?
-  actor         User?            @relation(fields: [actorId], references: [id])
+  actor         User?            @relation(fields: [actorId], references: [id], onDelete: Restrict)
   actionType    ActionType
+  stage         ApplicationStage?
   oldStage      ApplicationStage?
   newStage      ApplicationStage?
   notes         String?
@@ -126,7 +127,7 @@ model ApplicationHistory {
 model StalledAlertDismissal {
   id            String           @id @default(uuid())
   applicationId String
-  application   Application      @relation(fields: [applicationId], references: [id])
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   stage         ApplicationStage
   stageEnteredAt DateTime
   dismissedAt   DateTime         @default(now())

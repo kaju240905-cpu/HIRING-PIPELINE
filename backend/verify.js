@@ -1,0 +1,30 @@
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+async function verify() {
+    const users = await prisma.user.count();
+    const recruiters = await prisma.user.count({ where: { role: 'RECRUITER' } });
+    const interviewers = await prisma.user.count({ where: { role: 'INTERVIEWER' } });
+    const jobs = await prisma.jobOpening.count();
+    const jobsOpen = await prisma.jobOpening.count({ where: { status: 'OPEN' } });
+    const jobsClosed = await prisma.jobOpening.count({ where: { status: 'CLOSED' } });
+    const jobsArchived = await prisma.jobOpening.count({ where: { status: 'ARCHIVED' } });
+    const applications = await prisma.application.count();
+    const appsApplied = await prisma.application.count({ where: { currentStage: 'APPLIED' } });
+    const appsScreening = await prisma.application.count({ where: { currentStage: 'SCREENING' } });
+    const appsInterview = await prisma.application.count({ where: { currentStage: 'INTERVIEW' } });
+    const appsOffer = await prisma.application.count({ where: { currentStage: 'OFFER' } });
+    const appsHired = await prisma.application.count({ where: { currentStage: 'HIRED' } });
+    const appsRejected = await prisma.application.count({ where: { status: 'REJECTED' } });
+    const assignments = await prisma.interviewerAssignment.count();
+    const interviews = await prisma.interview.count();
+    const histories = await prisma.applicationHistory.count();
+    const dismissals = await prisma.stalledAlertDismissal.count();
+    console.log(`Users: ${users} (Recruiters: ${recruiters}, Interviewers: ${interviewers})`);
+    console.log(`Jobs: ${jobs} (Open: ${jobsOpen}, Closed: ${jobsClosed}, Archived: ${jobsArchived})`);
+    console.log(`Applications: ${applications} (Applied: ${appsApplied}, Screening: ${appsScreening}, Interview: ${appsInterview}, Offer: ${appsOffer}, Hired: ${appsHired}, Rejected: ${appsRejected})`);
+    console.log(`Assignments: ${assignments}`);
+    console.log(`Interviews: ${interviews}`);
+    console.log(`History records: ${histories}`);
+    console.log(`Stalled dismissals: ${dismissals}`);
+}
+verify().catch(console.error).finally(() => prisma.$disconnect());
