@@ -1,10 +1,17 @@
 import { Router } from 'express';
-import { createApplication, listApplications } from '../controllers/applicationController';
+import {
+  createApplication,
+  listApplications,
+  getApplicationById
+} from '../controllers/applicationController';
+import { requireAuth, requireRecruiter, requireInterviewerAssignment } from '../middleware/authMiddleware';
 
 const router = Router();
 
-// Auth is a Phase 2 feature, endpoints are open in Phase 1
-router.post('/', createApplication);
-router.get('/', listApplications); 
+router.use(requireAuth);
+
+router.post('/', requireRecruiter, createApplication);
+router.get('/', listApplications);
+router.get('/:id', requireInterviewerAssignment, getApplicationById);
 
 export default router;
