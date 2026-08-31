@@ -1,122 +1,115 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
 
-function App() {
-  const [count, setCount] = useState(0)
+const API_BASE = '/api';
+
+export default function App() {
+  const [user, setUser] = useState<any>(null);
+  const [view, setView] = useState('login');
+  const [dashboard, setDashboard] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/auth/me`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser(data.user);
+          setView('dashboard');
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const login = async (e: any) => {
+    e.preventDefault();
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: e.target.email.value, password: e.target.password.value })
+    });
+    const data = await res.json();
+    if (data.user) {
+      setUser(data.user);
+      setView('dashboard');
+    } else {
+      alert(data.error);
+    }
+  };
+
+  const logout = async () => {
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+    setUser(null);
+    setView('login');
+  };
+
+  const loadDashboard = async () => {
+    const res = await fetch(`${API_BASE}/dashboard`);
+    if (res.ok) {
+      setDashboard(await res.json());
+    }
+  };
+
+  const exportCsv = () => {
+    window.open(`${API_BASE}/csv`, '_blank');
+  };
+
+  useEffect(() => {
+    if (view === 'dashboard' && user) {
+      loadDashboard();
+    }
+  }, [view, user]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <form onSubmit={login} className="p-8 bg-white shadow rounded space-y-4">
+          <h1 className="text-xl font-bold">Login</h1>
+          <input name="email" type="email" placeholder="Email" className="block w-full border p-2" required />
+          <input name="password" type="password" placeholder="Password" className="block w-full border p-2" required />
+          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">Login</button>
+        </form>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="min-h-screen bg-gray-100 p-4">
+      <nav className="flex justify-between items-center bg-white p-4 shadow rounded mb-4">
+        <div className="font-bold text-xl">Hiring Pipeline</div>
+        <div className="flex gap-4">
+          <button onClick={() => setView('dashboard')} className="hover:underline">Dashboard</button>
+          <button onClick={logout} className="text-red-500">Logout ({user.role})</button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </nav>
 
-      <div className="ticks"></div>
+      {view === 'dashboard' && (
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <h2 className="text-2xl font-bold">Dashboard</h2>
+            <button onClick={exportCsv} className="bg-green-500 text-white px-4 py-2 rounded">Export CSV</button>
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          {dashboard && (
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white p-4 shadow rounded">
+                <div className="text-gray-500">Total Applications</div>
+                <div className="text-3xl">{dashboard.totalApplications}</div>
+              </div>
+              {user.role === 'RECRUITER' && (
+                <div className="bg-white p-4 shadow rounded">
+                  <div className="text-gray-500">Stalled Applications</div>
+                  <div className="text-3xl text-red-500">{dashboard.stalledCount}</div>
+                </div>
+              )}
+              {user.role === 'RECRUITER' && (
+                <div className="bg-white p-4 shadow rounded">
+                  <div className="text-gray-500">Open Jobs</div>
+                  <div className="text-3xl">{dashboard.openJobs}</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      )}
+    </div>
+  );
 }
-
-export default App
