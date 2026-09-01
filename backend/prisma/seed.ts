@@ -127,8 +127,8 @@ async function main() {
       },
       interviews: {
         create: [
-          { scheduledAt: currentWeekDate, createdBy: recruiter.id, createdAt: pastWeek }, // Inside current week
-          { scheduledAt: futureDate, createdBy: recruiter.id, createdAt: pastWeek } // Outside current week
+          { interviewerId: i1.id, roundTitle: 'Technical Interview', scheduledAt: currentWeekDate, createdBy: recruiter.id, createdAt: pastWeek }, // Inside current week
+          { interviewerId: i2.id, roundTitle: 'Culture Fit Interview', scheduledAt: futureDate, createdBy: recruiter.id, createdAt: pastWeek } // Outside current week
         ]
       }
     }

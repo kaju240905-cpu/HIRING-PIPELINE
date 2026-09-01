@@ -45,3 +45,15 @@ This document records the important technical and design decisions that shaped t
 - **Chose:** Storing `currentStage` and `stageEnteredAt` directly on the `Application` model.
 - **Rejected:** Calculating the current stage every time from the latest `ApplicationHistory` record.
 - **Why:** The current stage is frequently required when displaying and filtering the hiring pipeline. Storing it directly on the application makes these operations simpler and avoids repeatedly calculating the latest stage from the history table.
+
+## Decision 8: Direct Interview-to-Interviewer Link for Multi-Interview Support
+
+- **Chose:** Linking `Interview` directly to an `interviewerId` (`User`) and allowing recruiters to schedule multiple interviews per candidate once in the `INTERVIEW` stage.
+- **Rejected:** Relying solely on `InterviewerAssignment` joined to `Application`, or restricting candidates to a single interview round.
+- **Why:** In real-world hiring workflows, candidates regularly go through multiple interview rounds (e.g. Technical Round 1, Second Technical Round, HR Culture Round). Some rounds may be conducted by the same interviewer, while others are conducted by different interviewers. Storing the interviewer only at the application level created ambiguity regarding which interviewer conducted which round and prevented the same interviewer from conducting multiple separate rounds. Directly attaching `interviewerId` to each `Interview` record provides clear attribution, preserves multi-round support, and allows seamless interviewer reuse.
+
+## Decision 9: Soft-Archiving Applications Instead of Hard Deletion
+
+- **Chose:** Adding `ARCHIVED` status to `ApplicationStatus` and recording an `ActionType.ARCHIVED` audit trail while preserving the application, history, interviews, and feedback.
+- **Rejected:** Permanently deleting application records or overwriting pipeline stages.
+- **Why:** Deleting an application loses valuable hiring context, historical interviewer evaluations, and candidate interaction timelines. By soft-archiving, the system removes inactive candidates from day-to-day active recruiter views while maintaining historical fidelity and compliance auditability.

@@ -18,6 +18,7 @@ describe('Phase 3 Checkpoint 2: Pipeline & Concurrency', () => {
   let testJobId: string;
   let testApplicationId: string;
   let testVersion: number = 1;
+  let interviewerId: string;
 
   beforeAll(async () => {
     const recruiter = await prisma.user.findFirst({ where: { role: 'RECRUITER' } });
@@ -25,6 +26,7 @@ describe('Phase 3 Checkpoint 2: Pipeline & Concurrency', () => {
 
     const interviewer = await prisma.user.findFirst({ where: { role: 'INTERVIEWER' } });
     if (!interviewer) throw new Error('No interviewer found');
+    interviewerId = interviewer.id;
 
     // Login recruiter
     let res = await request(app).post('/api/auth/login').send({ email: recruiter.email, password: 'password123' });
@@ -101,7 +103,13 @@ describe('Phase 3 Checkpoint 2: Pipeline & Concurrency', () => {
       const res = await request(app)
         .post(`/api/applications/${testApplicationId}/advance`)
         .set('Cookie', recruiterTokenCookie)
-        .send({ expectedVersion: testVersion, nextStage: 'INTERVIEW' });
+        .send({ 
+          expectedVersion: testVersion, 
+          nextStage: 'INTERVIEW',
+          notes: 'Test evaluation notes',
+          interviewerId: interviewerId,
+          scheduledAt: new Date().toISOString()
+        });
       expect(res.status).toBe(200);
       testVersion++;
     });

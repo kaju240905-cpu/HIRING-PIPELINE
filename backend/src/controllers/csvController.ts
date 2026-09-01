@@ -20,6 +20,7 @@ export const exportApplicationsCsv = async (req: any, res: Response) => {
     
     if (isRecruiter) {
       applications = await prisma.application.findMany({
+        where: { status: ApplicationStatus.ACTIVE },
         include: { job: true }
       });
     } else {
@@ -30,7 +31,7 @@ export const exportApplicationsCsv = async (req: any, res: Response) => {
       const assignedAppIds = assignedApps.map(a => a.applicationId);
       
       applications = await prisma.application.findMany({
-        where: { id: { in: assignedAppIds } },
+        where: { id: { in: assignedAppIds }, status: ApplicationStatus.ACTIVE },
         include: { job: true }
       });
     }

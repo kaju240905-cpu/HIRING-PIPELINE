@@ -56,13 +56,15 @@ export const updateJob = async (req: Request, res: Response) => {
 export const listJobs = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    const { showArchived } = req.query;
     let whereClause: any = {};
 
-    // Interviewers can only see OPEN jobs, Recruiters can see all.
-    // (We also allow them to see closed/archived jobs if they have assigned applications, 
-    // but the basic list is usually just OPEN for interviewers)
+    // Interviewers can only see OPEN jobs.
+    // Recruiters see all non-ARCHIVED by default, or all if showArchived=true
     if (user.role === Role.INTERVIEWER) {
       whereClause.status = JobStatus.OPEN;
+    } else if (showArchived !== 'true') {
+      whereClause.status = { not: JobStatus.ARCHIVED };
     }
 
     const jobs = await prisma.jobOpening.findMany({
@@ -71,6 +73,48 @@ export const listJobs = async (req: Request, res: Response) => {
     });
 
     res.json(jobs);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const archiveJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const job = await prisma.jobOpening.findUnique({ where: { id: String(id) } });
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    if (job.status === JobStatus.ARCHIVED) {
+      return res.json({ success: true, message: 'Job is already archived', job });
+    }
+
+    const updatedJob = await prisma.jobOpening.update({
+      where: { id: String(id) },
+      data: { status: JobStatus.ARCHIVED }
+    });
+
+    res.json({ success: true, job: updatedJob });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const restoreJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const job = await prisma.jobOpening.findUnique({ where: { id: String(id) } });
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    if (job.status !== JobStatus.ARCHIVED) {
+      return res.json({ success: true, message: 'Job is not archived', job });
+    }
+
+    const updatedJob = await prisma.jobOpening.update({
+      where: { id: String(id) },
+      data: { status: JobStatus.OPEN }
+    });
+
+    res.json({ success: true, job: updatedJob });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

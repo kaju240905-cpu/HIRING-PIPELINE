@@ -103,7 +103,13 @@ describe('Phase 3 Checkpoint 3', () => {
       await request(app)
         .post(`/api/applications/${activeAppId}/advance`)
         .set('Cookie', recruiterTokenCookie)
-        .send({ expectedVersion: appRecord2?.version, nextStage: 'INTERVIEW' });
+        .send({ 
+          expectedVersion: appRecord2?.version, 
+          nextStage: 'INTERVIEW',
+          notes: 'Test evaluation notes',
+          interviewerId: interviewerId,
+          scheduledAt: new Date().toISOString()
+        });
     });
 
     it('Recruiter can schedule interview for INTERVIEW stage', async () => {
@@ -223,7 +229,13 @@ describe('Phase 3 Checkpoint 3', () => {
       const advRes = await request(app)
         .post(`/api/applications/${stalledAppId}/advance`)
         .set('Cookie', recruiterTokenCookie)
-        .send({ expectedVersion: appRecord?.version, nextStage: 'SCREENING' });
+        .send({ 
+          expectedVersion: appRecord?.version, 
+          nextStage: 'INTERVIEW',
+          notes: 'Test evaluation notes',
+          interviewerId: interviewerId,
+          scheduledAt: new Date().toISOString()
+        });
       expect(advRes.status).toBe(200);
 
       // Verify it is NOT stalled now

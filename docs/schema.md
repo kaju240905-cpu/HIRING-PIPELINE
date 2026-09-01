@@ -152,3 +152,27 @@ If this application experienced 100× more data, the following would likely beco
 1. **Unindexed String Searches**: Full-table scans would occur when filtering `JobOpening` by `title` or `description`, or when filtering `Application` by `candidateName` or `candidateEmail`. Applying standard or trigram indexes on these searchable strings would be required.
 2. **Audit Table Growth**: The `ApplicationHistory` table logs every interaction. At 100× scale, this table will become massive, slowing down write-heavy transactions or history retrieval. Implementing table partitioning (e.g., by month/year) or moving older logs to cold storage would become necessary.
 3. **UUID Keys**: UUIDv4 primary keys are appropriate for the current application and provide excellent global uniqueness across the system. However, at a much larger scale, randomly generated UUIDs may have less efficient index locality in PostgreSQL than sequential identifiers (like ULIDs or UUIDv7). If database index performance becomes a concern as the tables grow to massive sizes, an alternative sequential ID strategy could be considered.
+
+---
+
+## 6. Interview Model Updates (Multi-Interview Architecture)
+
+To support multiple interviews per application, distinct interviewers across different rounds, and multiple interviews conducted by the same interviewer for the same candidate without ambiguity, the `Interview` model was updated:
+
+- **`interviewerId`**: `String` (Foreign Key to `User`, `onDelete: Restrict`). Directly connects each scheduled interview with the specific interviewer conducting that round.
+- **`roundTitle`**: `String?` (Optional). Designates the specific round or type of interview (e.g., "Technical Interview", "HR Culture Interview", "Second Technical Round").
+- **Relations**:
+  - `User.interviewsConducted`: One-to-many relation linking an interviewer to all specific interviews they conduct across candidates.
+  - `User.interviewsCreated`: One-to-many relation tracking the recruiter who scheduled the interview.
+- **Indices**: Added `@@index([applicationId])` and `@@index([interviewerId])` to ensure fast retrieval when querying interviews by application or interviewer.
+
+---
+
+## 7. Application Archiving Schema Updates
+
+To support soft-archiving applications while preserving complete audit logs and historical associations:
+
+- **`ApplicationStatus` Enum**: Added `ARCHIVED` value (`ACTIVE`, `REJECTED`, `ARCHIVED`). This allows applications to be moved out of the active recruitment pipeline without altering their current stage or deleting related data.
+- **`ActionType` Enum**: Added `ARCHIVED` value (`CREATED`, `STAGE_ADVANCED`, `REJECTED`, `REINSTATED`, `FEEDBACK_ADDED`, `ARCHIVED`) to record an audit trail event in `ApplicationHistory` whenever a recruiter archives an application.
+
+

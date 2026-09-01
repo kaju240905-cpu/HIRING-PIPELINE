@@ -2,59 +2,117 @@ import { Request, Response } from 'express';
 import { prisma } from '../db';
 import { ActionType, ApplicationStage } from '@prisma/client';
 
-export const assignInterviewer = async (req: any, res: Response) => {
+export const listInterviews = async (req: Request, res: Response) => {
   try {
-    const applicationId = req.params.id;
-    const { interviewerId } = req.body;
-    
-    if (!interviewerId) return res.status(400).json({ error: 'interviewerId required' });
-    
-    const user = await prisma.user.findUnique({ where: { id: interviewerId } });
-    if (!user || user.role !== 'INTERVIEWER') return res.status(400).json({ error: 'Invalid interviewer' });
-    
-    const application = await prisma.application.findUnique({ where: { id: applicationId } });
-    if (!application) return res.status(404).json({ error: 'Application not found' });
-    
-    await prisma.interviewerAssignment.create({
-      data: { applicationId, interviewerId }
+    const interviews = await prisma.interview.findMany({
+      orderBy: { scheduledAt: 'asc' },
+      include: {
+        interviewer: {
+          select: { id: true, email: true, role: true }
+        },
+        application: {
+          include: {
+            job: {
+              select: { title: true }
+            }
+          }
+        }
+      }
     });
-    
-    res.json({ success: true });
-  } catch (error: any) {
-    if (error.code === 'P2002') return res.status(400).json({ error: 'Already assigned' });
+
+    res.json({ interviews });
+  } catch (error) {
     res.status(500).json({ error: 'Internal error' });
   }
 };
 
-export const scheduleInterview = async (req: any, res: Response) => {
+export const createAdditionalInterview = async (req: any, res: Response) => {
   try {
     const applicationId = req.params.id;
-    const { scheduledAt } = req.body;
-    
-    if (!scheduledAt || isNaN(Date.parse(scheduledAt))) return res.status(400).json({ error: 'Valid scheduledAt required' });
-    
+    const { interviewerId, scheduledAt, roundTitle } = req.body;
+
+    if (!interviewerId) {
+      return res.status(400).json({ error: 'Interviewer is required' });
+    }
+
+    if (!scheduledAt || isNaN(Date.parse(scheduledAt))) {
+      return res.status(400).json({ error: 'Valid scheduledAt date and time is required' });
+    }
+
     const application = await prisma.application.findUnique({ where: { id: applicationId } });
-    if (!application) return res.status(404).json({ error: 'Application not found' });
-    
-    // Only allow interview scheduling if application is ACTIVE and in an appropriate stage
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    if (application.currentStage !== ApplicationStage.INTERVIEW) {
+      return res.status(400).json({
+        error: `Additional interviews can only be scheduled when candidate is in the INTERVIEW stage. Current stage: ${application.currentStage}`
+      });
+    }
+
     if (application.status !== 'ACTIVE') {
-      return res.status(400).json({ error: 'Cannot schedule interview for a rejected application' });
+      return res.status(400).json({ error: 'Cannot schedule interviews for non-active applications' });
     }
-    if (application.currentStage === 'APPLIED' || application.currentStage === 'HIRED' || application.currentStage === 'OFFER') {
-      return res.status(400).json({ error: 'Inappropriate application stage for interview' });
+
+    const interviewerUser = await prisma.user.findUnique({ where: { id: interviewerId } });
+    if (!interviewerUser || interviewerUser.role !== 'INTERVIEWER') {
+      return res.status(400).json({ error: 'Selected user is not a valid interviewer' });
     }
-    
-    const interview = await prisma.interview.create({
-      data: {
-        applicationId,
-        scheduledAt: new Date(scheduledAt),
-        createdBy: req.user.userId
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Ensure InterviewerAssignment exists for (applicationId, interviewerId) so this interviewer has access
+      const existingAssignment = await tx.interviewerAssignment.findUnique({
+        where: {
+          applicationId_interviewerId: {
+            applicationId,
+            interviewerId
+          }
+        }
+      });
+
+      if (!existingAssignment) {
+        await tx.interviewerAssignment.create({
+          data: {
+            applicationId,
+            interviewerId
+          }
+        });
       }
+
+      // Create Interview
+      const newInterview = await tx.interview.create({
+        data: {
+          applicationId,
+          interviewerId,
+          roundTitle: roundTitle || 'Additional Interview',
+          scheduledAt: new Date(scheduledAt),
+          createdBy: req.user.userId
+        },
+        include: {
+          interviewer: {
+            select: { id: true, email: true, role: true }
+          }
+        }
+      });
+
+      // Add to ApplicationHistory
+      await tx.applicationHistory.create({
+        data: {
+          applicationId,
+          actorId: req.user.userId,
+          actionType: ActionType.STAGE_ADVANCED,
+          stage: ApplicationStage.INTERVIEW,
+          notes: `Additional interview scheduled: ${roundTitle || 'Interview'} with ${interviewerUser.email} on ${new Date(scheduledAt).toLocaleString()}`
+        }
+      });
+
+      return newInterview;
     });
-    
-    res.json({ success: true, interview });
+
+    res.status(201).json({ success: true, interview: result });
   } catch (error) {
-    res.status(500).json({ error: 'Internal error' });
+    console.error('Error creating additional interview:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -83,3 +141,4 @@ export const addFeedback = async (req: any, res: Response) => {
     res.status(500).json({ error: 'Internal error' });
   }
 };
+

@@ -437,4 +437,32 @@ If the system were expanded further, possible architectural improvements could i
 
 - Improving database indexing for larger datasets
 
+---
+
+**## 9. Multi-Interview Management Architecture**
+
+The interview management subsystem supports full end-to-end multi-interview workflows:
+
+1. **Initial Interview Creation:** The first interview is strictly created during the sequential, transactional `SCREENING -> INTERVIEW` advancement. The recruiter must provide evaluation notes, an interviewer, and a scheduled date and time (with an optional round title).
+2. **Additional Interview Scheduling:** Once an application enters the `INTERVIEW` stage, recruiters can schedule additional interviews via `POST /api/applications/:id/interviews`. The backend enforces that the candidate must currently be in the `INTERVIEW` stage; requests for `APPLIED` or `SCREENING` candidates are strictly rejected.
+3. **Data Model Relationship:** Each `Interview` record directly stores `interviewerId`, referencing the `User` who will conduct the interview, along with an optional `roundTitle` describing the round.
+4. **Interviewer Attribution & Access:** When an interview is scheduled, an `InterviewerAssignment` join record is upserted for `(applicationId, interviewerId)` if not already present. This ensures that interviewers assigned to any round of a candidate gain application-level read access and feedback authorization.
+5. **Global Interviews Page:** The `GET /api/interviews` read-only endpoint retrieves every interview record with its directly associated interviewer. Each row represents a single scheduled interview event with candidate, job position, interviewer, date/time, and computed status.
+
+---
+
+**## 10. Application Archiving Architecture**
+
+The application archiving subsystem provides non-destructive removal of applications from the active recruiting workflow:
+
+1. **Archiving Endpoint (`POST /api/applications/:id/archive`):** Protected by `requireRecruiter`. Checks application existence and idempotently updates `status` to `ARCHIVED`. Automatically creates an `ActionType.ARCHIVED` entry in `ApplicationHistory`.
+2. **Default List Filtering:** The `GET /api/applications` endpoint filters out `ARCHIVED` applications by default (`status: { not: 'ARCHIVED' }`). Recruiters can supply `showArchived=true` to view all applications or filter by specific statuses.
+3. **Pipeline Action Guardrails:** Once an application is `ARCHIVED`:
+   - Stage advancement (`POST /api/applications/:id/advance`) and bulk advancement (`POST /api/applications/bulk/advance`) are rejected with HTTP 400.
+   - Rejection (`POST /api/applications/:id/reject`) and bulk rejection (`POST /api/applications/bulk/reject`) are rejected with HTTP 400.
+   - Interview scheduling (`POST /api/applications/:id/interviews`) is rejected with HTTP 400.
+4. **Data Preservation & Read Access:** Archiving never deletes candidate records, interview history, assignments, or feedback. When viewing an archived application, all previous data remains accessible in a read-only state.
+
+
+
 

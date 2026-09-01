@@ -60,6 +60,19 @@ export async function logout(req: Request, res: Response) {
   return res.status(200).json({ message: 'Logged out successfully' });
 }
 
+export async function getInterviewers(req: Request, res: Response) {
+  try {
+    const interviewers = await prisma.user.findMany({
+      where: { role: 'INTERVIEWER' },
+      select: { id: true, email: true },
+      orderBy: { email: 'asc' }
+    });
+    return res.status(200).json(interviewers);
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 export async function getCurrentUser(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ error: 'Authentication required' });

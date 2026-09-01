@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { advanceApplication, rejectApplication, reinstateApplication } from '../controllers/pipelineController';
+import { advanceApplication, rejectApplication, reinstateApplication, bulkAdvance, bulkReject } from '../controllers/pipelineController';
 import { requireAuth, requireRecruiter } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -10,5 +10,8 @@ router.use(requireRecruiter);
 router.post('/:id/advance', advanceApplication);
 router.post('/:id/reject', rejectApplication);
 router.post('/:id/reinstate', reinstateApplication);
+
+router.post('/bulk/advance', bulkAdvance);
+router.post('/bulk/reject', bulkReject);
 
 export default router;

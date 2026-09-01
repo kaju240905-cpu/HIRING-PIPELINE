@@ -33,10 +33,19 @@ describe('Phase 2 Authentication + RBAC', () => {
     interviewerEmail = interviewer.email;
 
     // Fetch assignments to find assigned and unassigned applications for the interviewer
-    const assignment = await prisma.interviewerAssignment.findFirst({
+    let assignment = await prisma.interviewerAssignment.findFirst({
       where: { interviewerId: interviewer.id }
     });
-    if (!assignment) throw new Error('No assignments found for interviewer');
+    if (!assignment) {
+      const app = await prisma.application.findFirst();
+      if (!app) throw new Error('No application found to assign');
+      assignment = await prisma.interviewerAssignment.create({
+        data: {
+          applicationId: app.id,
+          interviewerId: interviewer.id
+        }
+      });
+    }
     assignedApplicationId = assignment.applicationId;
 
     const unassignedApp = await prisma.application.findFirst({

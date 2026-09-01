@@ -153,3 +153,25 @@ The final development process followed a dependency-based approach. The project 
 More complex features such as pipeline state transitions, concurrency handling, database transactions, interviewer assignments, and interview scheduling were added after the required foundation was in place.
 
 Some features that would be useful in a larger Applicant Tracking System remain outside the current scope and could be considered for future development.
+
+---
+
+## 6. Multi-Interview Implementation Milestone
+
+In a subsequent implementation phase, the interview management system was upgraded to support full multi-interview workflows:
+
+- **Data Model Migration:** Added `interviewerId` and `roundTitle` to `Interview` in `schema.prisma`, safely migrating all 36 existing database records with zero data loss and regenerating the Prisma client.
+- **Stage Gating:** Maintained atomic creation of the initial interview during the `SCREENING -> INTERVIEW` transition, while adding a protected `POST /api/applications/:id/interviews` endpoint permitting additional interviews exclusively when an application is in the `INTERVIEW` stage.
+- **UI Enhancements:** Updated Application Details to list each scheduled interview with round title, assigned interviewer, scheduled date/time, and status badge, while providing recruiters with a "+ Schedule Another Interview" modal.
+- **Global Overview:** Updated the Global Interviews page to directly display the interviewer responsible for each specific interview event.
+
+---
+
+## 7. Application Archiving Implementation Milestone
+
+In a subsequent phase, full application archiving functionality was implemented:
+
+- **Schema Evolution:** Added `ARCHIVED` to `ApplicationStatus` and `ActionType` enums, enabling soft-archiving without loss of candidate details, stage history, interviews, or feedback.
+- **Backend API & Guardrails:** Created `POST /api/applications/:id/archive` with recruiter-only permissions and idempotency. Enhanced pipeline transition endpoints (`advanceApplication`, `rejectApplication`, `bulkAdvance`, `bulkReject`, and `createAdditionalInterview`) to reject operations on non-active applications.
+- **Default Exclusion & Visibility:** Updated `listApplications` to exclude archived applications by default, while allowing recruiters to toggle archived visibility via `showArchived=true`.
+- **Frontend Experience:** Added a "Show Archived" toggle on the Applications page, clear status badges, confirmation modals preventing accidental archiving, and safety disabling of bulk action checkboxes for archived rows.
