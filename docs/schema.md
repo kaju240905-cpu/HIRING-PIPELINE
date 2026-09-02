@@ -1,178 +1,207 @@
 # Hiring Pipeline Database Schema
 
-This document details the database schema for the Hiring Pipeline application, based on the current Prisma implementation (`schema.prisma`) and backend constraints.
+This document details the database schema for the Hiring Pipeline application based on the Prisma implementation (`schema.prisma`) and backend business constraints.
 
-## 1. Database Models
+---
 
-The database is built on PostgreSQL using Prisma as the ORM. Below is a breakdown of all models, columns, and data types.
+## 1. Table by Table: Models, Columns, and Data Types
+
+The database is built on PostgreSQL using Prisma ORM. Below is a breakdown of all models, columns, data types, and nullability.
 
 ### `User`
-Stores system users (Recruiters and Interviewers).
+Stores system accounts for Recruiters and Interviewers.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `email` | `String` | No | Unique constraint |
-| `passwordHash` | `String` | No | |
-| `role` | `Role` | No | Enum: `RECRUITER`, `INTERVIEWER` |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `email` | `String` | No | Unique constraint (`@unique`) |
+| `passwordHash` | `String` | No | Hashed password credential |
+| `role` | `Role` Enum | No | Values: `RECRUITER`, `INTERVIEWER` |
 | `createdAt` | `DateTime` | No | Defaults to `now()` |
 
 ### `JobOpening`
-Represents an available job position.
+Represents an open position created by recruiters.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `title` | `String` | No | |
-| `department` | `String` | No | |
-| `description` | `String` | No | |
-| `status` | `JobStatus` | No | Enum: `OPEN`, `CLOSED`, `ARCHIVED` (Default: `OPEN`) |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `title` | `String` | No | Role title |
+| `department` | `String` | No | Department name |
+| `description` | `String` | No | Role summary and job description |
+| `status` | `JobStatus` Enum | No | Values: `OPEN`, `CLOSED`, `ARCHIVED` (Default: `OPEN`) |
 | `createdAt` | `DateTime` | No | Defaults to `now()` |
-| `updatedAt` | `DateTime` | No | Auto-updated on record changes |
+| `updatedAt` | `DateTime` | No | Auto-updated on modification (`@updatedAt`) |
 
 ### `Application`
-Represents a candidate's application for a specific job opening.
+Represents a candidate's application for a job position and tracks their pipeline state.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `jobId` | `String` | No | Foreign Key to `JobOpening` |
-| `candidateName`| `String` | No | |
-| `candidateEmail`| `String` | No | |
-| `source` | `String` | No | E.g. Referral, Website |
-| `notes` | `String` | Yes | Internal notes |
-| `currentStage` | `ApplicationStage` | No | Enum (Default: `APPLIED`) |
-| `status` | `ApplicationStatus`| No | Enum: `ACTIVE`, `REJECTED` (Default: `ACTIVE`) |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `jobId` | `String` | No | Foreign Key ➔ `JobOpening.id` (`onDelete: Restrict`) |
+| `candidateName` | `String` | No | Candidate full name |
+| `candidateEmail` | `String` | No | Candidate email address |
+| `source` | `String` | No | Application channel (e.g. Referral, Job Board) |
+| `notes` | `String` | Yes | Optional recruiter notes |
+| `currentStage` | `ApplicationStage` Enum | No | Values: `APPLIED`, `SCREENING`, `INTERVIEW`, `OFFER`, `HIRED` (Default: `APPLIED`) |
+| `status` | `ApplicationStatus` Enum | No | Values: `ACTIVE`, `REJECTED`, `ARCHIVED` (Default: `ACTIVE`) |
 | `appliedAt` | `DateTime` | No | Defaults to `now()` |
-| `stageEnteredAt`| `DateTime` | No | Defaults to `now()` |
-| `version` | `Int` | No | Used for optimistic concurrency control (Default: 1) |
+| `stageEnteredAt` | `DateTime` | No | Timestamp of entry into `currentStage` (Default: `now()`) |
+| `version` | `Int` | No | Version counter for Optimistic Concurrency Control (Default: `1`) |
 | `createdAt` | `DateTime` | No | Defaults to `now()` |
-| `updatedAt` | `DateTime` | No | Auto-updated on record changes |
+| `updatedAt` | `DateTime` | No | Auto-updated on modification (`@updatedAt`) |
 
 ### `InterviewerAssignment`
-Maps users (interviewers) to specific applications. Note that this is separate from scheduling actual interviews; this model simply assigns a user to a candidate's application.
+Explicit join table mapping assigned interviewers to candidate applications.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `applicationId`| `String` | No | Foreign Key to `Application` |
-| `interviewerId`| `String` | No | Foreign Key to `User` |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `applicationId` | `String` | No | Foreign Key ➔ `Application.id` (`onDelete: Restrict`) |
+| `interviewerId` | `String` | No | Foreign Key ➔ `User.id` (`onDelete: Restrict`) |
 | `createdAt` | `DateTime` | No | Defaults to `now()` |
+
+* **Composite Constraint**: `@@unique([applicationId, interviewerId])` prevents assigning the same interviewer twice to the same application.
 
 ### `Interview`
-Records the scheduling information for an interview event related to an application. It does not directly link to an interviewer; it only tracks the application, the scheduled time, and the user who created the record.
+Tracks scheduled interview rounds for candidate applications.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `applicationId`| `String` | No | Foreign Key to `Application` |
-| `scheduledAt` | `DateTime` | No | |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `applicationId` | `String` | No | Foreign Key ➔ `Application.id` (`onDelete: Restrict`) |
+| `interviewerId` | `String` | No | Foreign Key ➔ `User.id` (Assigned Interviewer) |
+| `roundTitle` | `String` | Yes | Title/type of round (e.g. "System Design Round") |
+| `scheduledAt` | `DateTime` | No | Date and time of interview |
+| `status` | `InterviewStatus` Enum | No | Values: `SCHEDULED`, `COMPLETED` (Default: `SCHEDULED`) |
 | `createdAt` | `DateTime` | No | Defaults to `now()` |
-| `createdBy` | `String` | No | Foreign Key to `User` (The user who scheduled/created this record) |
+| `createdBy` | `String` | No | Foreign Key ➔ `User.id` (Recruiter who scheduled it) |
+
+### `Feedback`
+Evaluation form filled by an interviewer after an interview round.
+
+| Column | Data Type | Optional | Notes |
+| :--- | :--- | :---: | :--- |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `interviewId` | `String` | No | Foreign Key ➔ `Interview.id` (`@unique`, `onDelete: Cascade`) |
+| `interviewerId` | `String` | No | Foreign Key ➔ `User.id` (`onDelete: Restrict`) |
+| `technicalSkillsRating` | `Int` | No | Score between 1 and 5 |
+| `communicationSkillsRating` | `Int` | No | Score between 1 and 5 |
+| `problemSolvingRating` | `Int` | No | Score between 1 and 5 |
+| `roleSpecificSkillsRating` | `Int` | No | Score between 1 and 5 |
+| `recommendation` | `Recommendation` Enum | No | Values: `STRONG_HIRE`, `HIRE`, `NEUTRAL`, `REJECT`, `STRONG_REJECT` |
+| `strengths` | `String` | No | Text assessment of strengths |
+| `concerns` | `String` | No | Text assessment of concerns |
+| `comments` | `String` | Yes | Optional extra feedback notes |
+| `createdAt` | `DateTime` | No | Defaults to `now()` |
+| `updatedAt` | `DateTime` | No | Auto-updated on modification (`@updatedAt`) |
 
 ### `ApplicationHistory`
-An audit log of all actions and stage transitions on applications.
+Audit log recording every state transition and action taken on an application.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `applicationId`| `String` | No | Foreign Key to `Application` |
-| `actorId` | `String` | Yes | Foreign Key to `User` |
-| `actionType` | `ActionType` | No | Enum |
-| `stage` | `ApplicationStage` | Yes | Relevant stage for the action |
-| `oldStage` | `ApplicationStage` | Yes | State before transition |
-| `newStage` | `ApplicationStage` | Yes | State after transition |
-| `notes` | `String` | Yes | Additional context or feedback |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `applicationId` | `String` | No | Foreign Key ➔ `Application.id` (`onDelete: Restrict`) |
+| `actorId` | `String` | Yes | Foreign Key ➔ `User.id` (`onDelete: Restrict`) |
+| `actionType` | `ActionType` Enum | No | Values: `CREATED`, `STAGE_ADVANCED`, `REJECTED`, `REINSTATED`, `FEEDBACK_ADDED`, `ARCHIVED` |
+| `stage` | `ApplicationStage` | Yes | Relevant stage during action |
+| `oldStage` | `ApplicationStage` | Yes | Pre-transition stage |
+| `newStage` | `ApplicationStage` | Yes | Post-transition stage |
+| `notes` | `String` | Yes | Additional notes attached to action |
 | `createdAt` | `DateTime` | No | Defaults to `now()` |
 
 ### `StalledAlertDismissal`
-Tracks when recruiters dismiss "stalled" alerts for specific stages of applications.
+Records recruiter dismissals of stalled alerts for specific application stages.
 
 | Column | Data Type | Optional | Notes |
 | :--- | :--- | :---: | :--- |
-| `id` | `String` (UUID) | No | Primary Key |
-| `applicationId`| `String` | No | Foreign Key to `Application` |
-| `stage` | `ApplicationStage` | No | Enum |
-| `stageEnteredAt`| `DateTime` | No | Snapshot of when the alert was triggered |
+| `id` | `String` (UUID) | No | Primary Key (`@id @default(uuid())`) |
+| `applicationId` | `String` | No | Foreign Key ➔ `Application.id` (`onDelete: Restrict`) |
+| `stage` | `ApplicationStage` | No | Stage in which alert occurred |
+| `stageEnteredAt` | `DateTime` | No | Snapshot timestamp when candidate entered stage |
 | `dismissedAt` | `DateTime` | No | Defaults to `now()` |
+
+* **Composite Constraint**: `@@unique([applicationId, stage, stageEnteredAt])` ensures an alert for a specific stage entry timestamp can only be dismissed once.
 
 ---
 
 ## 2. Relationships
 
-### One-to-Many
-- **JobOpening ➔ Applications**: A job opening can have many applications.
-- **Application ➔ InterviewerAssignments**: An application can have multiple assigned interviewers.
-- **Application ➔ Interviews**: An application can have multiple scheduled interviews.
-- **Application ➔ ApplicationHistory**: An application has a log of many history actions.
-- **Application ➔ StalledAlertDismissals**: Alerts for a single application can be dismissed multiple times across different stages.
-- **User ➔ InterviewerAssignments**: A user can be assigned to many applications.
-- **User ➔ ApplicationHistory**: A user can perform many recorded actions.
-- **User ➔ Interviews**: A user can schedule/create many interview records (tracked via `createdBy`).
+### One-to-Many Relationships
+- **`JobOpening` ➔ `Application`**: A single job opening receives multiple candidate applications.
+- **`Application` ➔ `InterviewerAssignment`**: An application can have multiple assigned interviewers.
+- **`Application` ➔ `Interview`**: An application can have multiple scheduled interview rounds.
+- **`Application` ➔ `ApplicationHistory`**: An application records multiple historical audit events over its lifecycle.
+- **`Application` ➔ `StalledAlertDismissal`**: An application can have multiple alert dismissals over different stages/entry timestamps.
+- **`User` ➔ `InterviewerAssignment`**: An interviewer can be assigned to multiple candidate applications.
+- **`User` ➔ `ApplicationHistory`**: A user can perform and record multiple audit log actions.
+- **`User` ➔ `Interview`**: A user acts as an interviewer (`interviewsConducted`) and/or creator (`interviewsCreated`) across multiple interviews.
+- **`User` ➔ `Feedback`**: An interviewer submits feedback across multiple interviews.
 
-### Many-to-Many
-- There are **no implicit Many-to-Many** relations modeled strictly via Prisma arrays on both sides.
-- However, the `InterviewerAssignment` table functions as an explicit **join table** representing a logical many-to-many relationship between **Applications** and **Users** (specifically Interviewers).
+### One-to-One Relationships
+- **`Interview` ➔ `Feedback`**: Each scheduled interview round connects to at most one feedback record (`Feedback.interviewId` has a `@unique` constraint).
+
+### Many-to-Many Relationships
+- **`Application` ↔ `User` (Interviewers)**: Explicitly modeled via the **`InterviewerAssignment`** join table. An application can be assigned to multiple users (interviewers), and an interviewer can be assigned to multiple applications.
 
 ---
 
-## 3. Constraints
+## 3. Constraints: Database vs. Application Code
 
-### Enforced by Database / Prisma Schema
-- **Primary Keys**: Handled automatically using UUID generation (`@id @default(uuid())`).
-- **Unique Constraints**:
-  - `User.email` must be unique across the system.
-  - `InterviewerAssignment` has a composite unique constraint (`@@unique([applicationId, interviewerId])`) preventing the same user from being assigned to the same application twice.
-  - `StalledAlertDismissal` has a composite unique constraint (`@@unique([applicationId, stage, stageEnteredAt])`) ensuring an alert for a specific stage/time combination is only dismissed once per application.
-- **Referential Integrity**: All relationships explicitly use `onDelete: Restrict` in the Prisma schema. This ensures that a parent record (e.g., a User, JobOpening, or Application) cannot be deleted if there are any child records currently referencing it, preserving data integrity.
-- **Duplicate Applications**: There is currently NO unique constraint on the combination of `jobId` and `candidateEmail`. The database does not enforce uniqueness for a candidate applying to the same job opening multiple times.
+### Constraints Enforced by Database / Prisma
+- **Entity Identity & Uniqueness**:
+  - Primary keys (`UUIDv4`) across all models.
+  - Unique constraint on `User.email`.
+  - Unique constraint on `Feedback.interviewId` (guarantees maximum 1 feedback form per interview round).
+  - Composite unique constraint `@@unique([applicationId, interviewerId])` on `InterviewerAssignment` (prevents double assignment).
+  - Composite unique constraint `@@unique([applicationId, stage, stageEnteredAt])` on `StalledAlertDismissal` (prevents multiple dismissals of the same stalled event).
+- **Referential Integrity & Cascades**:
+  - Foreign key constraints with `onDelete: Restrict` across parent entities (`User`, `JobOpening`, `Application`) to block accidental deletion when dependent records exist.
+  - Foreign key constraint with `onDelete: Cascade` on `Feedback.interview` (deleting an interview automatically removes its associated feedback record).
+- **Type Enums**: Native PostgreSQL enums strictly constrain column values (`Role`, `JobStatus`, `ApplicationStage`, `ApplicationStatus`, `ActionType`, `InterviewStatus`, `Recommendation`).
 
-### Enforced by Application Code
-The application logic (specifically in `pipelineController.ts`) enforces several critical business rules that the database does not:
-- **Optimistic Concurrency Control**: Uses the `version` column on the `Application` model. State transition requests must provide an `expectedVersion` which is compared against the database to prevent race conditions during concurrent modifications.
-- **State Machine Transitions**:
-  - Advancing an application verifies it is a valid forward transition.
-  - Applications already in the final stage cannot be advanced.
-  - Rejected applications cannot be advanced unless explicitly reinstated first ("Application must be rejected to be reinstated").
-- **Stage Requirements**: Business rules dictate that transitioning to specific stages requires attached data. E.g., advancing to `INTERVIEW` requires valid `notes`, an `interviewerId`, and a `scheduledAt` date.
+### Constraints Enforced by Application Code
+- **Optimistic Concurrency Control**: Managed in `pipelineController.ts` using the `Application.version` column. Mutation requests must provide an `expectedVersion` matching the current version in PostgreSQL to prevent silent data overwrites during concurrent edits.
+- **Pipeline State Machine Rules**:
+  - Forward stage progression validations (e.g. verifying valid stage sequence `APPLIED` ➔ `SCREENING` ➔ `INTERVIEW` ➔ `OFFER` ➔ `HIRED`).
+  - Terminal state restrictions (candidates in `HIRED` or `REJECTED` cannot advance without explicit reinstatement).
+  - Reinstatement rules (only `REJECTED` applications can be reinstated).
+  - Prerequisites for stage advancement (e.g. transitioning to `INTERVIEW` requires scheduled date, notes, and interviewer assignment).
+- **Numerical Rating Bounds**: Controller input validation ensures ratings (`technicalSkillsRating`, `communicationSkillsRating`, etc.) are integers between 1 and 5.
+- **Stalled Application Timeout Rules**: Business logic computing whether an application is "stalled" (e.g., active application remaining in a stage past the threshold duration without a dismissal) is evaluated dynamically in `alertController.ts`.
+- **Role-Based Permissions**: Middleware verifying `RECRUITER` vs `INTERVIEWER` roles before allowing pipeline state modifications or user assignments.
+
+### Why Draw the Line There?
+* **Database Responsibilities**: Hard structural invariants, data entity uniqueness, referential integrity, and column type limits belong in the database layer. This ensures data corruption, orphaned child rows, or invalid enum values are physically impossible regardless of which service, script, or background worker accesses PostgreSQL.
+* **Application Code Responsibilities**: Workflow state machine transitions, optimistic locking version comparisons, multi-model business validations, dynamic timeout thresholds, and authorization logic belong in application code. Business rules evolve frequently, require user-friendly validation messages, and depend on complex contextual state that is difficult to manage inside database triggers or static constraints.
 
 ---
 
 ## 4. Deliberate Denormalisation
 
-- The **`Application` model stores `currentStage` and `stageEnteredAt`**, even though this exact information can be deduced by finding the latest `ApplicationHistory` record for that application.
-- **Why?** This is a deliberate performance choice. By keeping the current stage and timeline on the main record, the system avoids complex subqueries or costly aggregations when generating lists of applications, filtering by active stage, or calculating whether an application is currently stalled.
+1. **`Application.currentStage` & `Application.stageEnteredAt`**:
+   - *Normalized Alternative*: Query the most recent entry in `ApplicationHistory` to derive the current stage and its entry timestamp.
+   - *Why Denormalised*: Pipeline listings, Kanban boards, stage filters, dashboard metrics, and stalled alert calculations are queried constantly. Storing `currentStage` and `stageEnteredAt` directly on `Application` eliminates complex subqueries, `ROW_NUMBER() OVER (...)` window functions, and expensive joins on `ApplicationHistory`.
+2. **`Application.status` (`ACTIVE`, `REJECTED`, `ARCHIVED`)**:
+   - *Why Denormalised*: Allows fast indexing (`@@index([currentStage, status])`) and direct filtering of active recruitment pipelines without calculating status from audit history logs.
+3. **`Feedback.interviewerId`**:
+   - *Normalized Alternative*: Derive `interviewerId` via `Feedback ➔ Interview ➔ interviewerId`.
+   - *Why Denormalised*: Direct index (`@@index([interviewerId])`) allows fetching an interviewer's submitted feedback history and performance metrics directly without joining through `Interview`.
 
 ---
 
-## 5. Performance and Scalability (100× Data)
+## 5. Scalability Bottlenecks (100× Data)
 
-If this application experienced 100× more data, the following would likely become bottlenecks:
+If the dataset grows 100× (millions of applications, interviews, and audit logs), the following bottlenecks will emerge first:
 
-1. **Unindexed String Searches**: Full-table scans would occur when filtering `JobOpening` by `title` or `description`, or when filtering `Application` by `candidateName` or `candidateEmail`. Applying standard or trigram indexes on these searchable strings would be required.
-2. **Audit Table Growth**: The `ApplicationHistory` table logs every interaction. At 100× scale, this table will become massive, slowing down write-heavy transactions or history retrieval. Implementing table partitioning (e.g., by month/year) or moving older logs to cold storage would become necessary.
-3. **UUID Keys**: UUIDv4 primary keys are appropriate for the current application and provide excellent global uniqueness across the system. However, at a much larger scale, randomly generated UUIDs may have less efficient index locality in PostgreSQL than sequential identifiers (like ULIDs or UUIDv7). If database index performance becomes a concern as the tables grow to massive sizes, an alternative sequential ID strategy could be considered.
-
----
-
-## 6. Interview Model Updates (Multi-Interview Architecture)
-
-To support multiple interviews per application, distinct interviewers across different rounds, and multiple interviews conducted by the same interviewer for the same candidate without ambiguity, the `Interview` model was updated:
-
-- **`interviewerId`**: `String` (Foreign Key to `User`, `onDelete: Restrict`). Directly connects each scheduled interview with the specific interviewer conducting that round.
-- **`roundTitle`**: `String?` (Optional). Designates the specific round or type of interview (e.g., "Technical Interview", "HR Culture Interview", "Second Technical Round").
-- **Relations**:
-  - `User.interviewsConducted`: One-to-many relation linking an interviewer to all specific interviews they conduct across candidates.
-  - `User.interviewsCreated`: One-to-many relation tracking the recruiter who scheduled the interview.
-- **Indices**: Added `@@index([applicationId])` and `@@index([interviewerId])` to ensure fast retrieval when querying interviews by application or interviewer.
-
----
-
-## 7. Application Archiving Schema Updates
-
-To support soft-archiving applications while preserving complete audit logs and historical associations:
-
-- **`ApplicationStatus` Enum**: Added `ARCHIVED` value (`ACTIVE`, `REJECTED`, `ARCHIVED`). This allows applications to be moved out of the active recruitment pipeline without altering their current stage or deleting related data.
-- **`ActionType` Enum**: Added `ARCHIVED` value (`CREATED`, `STAGE_ADVANCED`, `REJECTED`, `REINSTATED`, `FEEDBACK_ADDED`, `ARCHIVED`) to record an audit trail event in `ApplicationHistory` whenever a recruiter archives an application.
-
-
+1. **Unindexed String Searches & Filters**:
+   - Searches on `candidateName`, `candidateEmail`, `source`, `JobOpening.title`, and `JobOpening.department` currently perform full-table scans. Adding B-tree or trigram (`pg_trgm`) indexes will be necessary to maintain fast search latency.
+2. **`ApplicationHistory` Audit Log Table Growth**:
+   - Every single action appends a row to `ApplicationHistory`. At 100× scale, table bloat will slow down writes and history queries. Implementing PostgreSQL table partitioning (e.g. range partitioning by `createdAt`) or moving older audit logs to cold storage will be required.
+3. **Stalled Application Alert Computations**:
+   - Alert calculations scan active applications and cross-reference `StalledAlertDismissal`. Without covering indexes on `(status, currentStage, stageEnteredAt)`, generating dashboard alerts across millions of applications will cause high CPU and I/O load.
+4. **UUIDv4 Index Locality & Thrashing**:
+   - `UUIDv4` primary keys generate random identifiers. At high write volumes with millions of rows, random UUID inserts cause page splits and cache thrashing in PostgreSQL B-tree indexes. Migrating to time-sortable sequential identifiers (`UUIDv7` or `ULID`) would improve index locality.
+5. **Optimistic Locking Retries**:
+   - High concurrency on popular job openings or batch operations will lead to frequent version mismatch errors (`version` conflict), requiring client retry strategies or queue-based sequencing.

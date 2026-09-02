@@ -82,7 +82,10 @@ This made sense because interview scheduling depends on existing applications, u
 
 ## 3. Planned Work Versus Actual Development
 
-The actual development process required some changes to the original implementation approach.
+The actual development process required some changes to the original implementation approach, and time estimates shifted as complexity grew.
+
+### Estimated vs. Actual Time
+I originally estimated that the core requirements would take around 8-10 hours, divided evenly between database/backend setup and frontend UI development. In reality, the project took closer to 12-14 hours. The discrepancy came entirely from the backend complexity—specifically ensuring that atomic database transactions were rock solid, and implementing optimistic concurrency control to handle race conditions properly. The frontend was relatively quick, but the backend business rules demanded far more rigorous testing and adjustment than anticipated.
 
 ### Pipeline Features Took More Development Than Initially Planned
 
