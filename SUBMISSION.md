@@ -5,8 +5,8 @@ This project is a complete Hiring Pipeline system that allows recruiters to mana
 
 ## 2. Live Deployment
 *(Add your live URL here if deploying)*
-**Frontend URL:** 
-**Backend API URL:** 
+**Frontend URL:** https://hiring-pipeline-bay.vercel.app/
+**Backend API URL:** https://hiring-pipeline-backend.onrender.com/
 
 ## 3. GitHub Repository
 **Repository:** https://github.com/kaju240905-cpu/HIRING-PIPELINE.git
