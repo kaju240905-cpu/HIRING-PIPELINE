@@ -1561,20 +1561,167 @@ export default function App() {
                 <span className="text-gray-500">No dashboard data available.</span>
               </div>
             ) : user.role === 'RECRUITER' ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Applications</span>
-                  <span className="text-4xl font-bold text-gray-900 mt-2">{dashboard.totalApplications}</span>
+              <div className="space-y-8">
+                {/* Metric Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {/* Total Applications */}
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-start hover:shadow-md transition-shadow">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Applications</span>
+                      <div className="text-3xl font-extrabold text-gray-900 mt-2">{dashboard.totalApplications ?? 0}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        <span className="text-emerald-600 font-medium">{dashboard.activeApplications ?? 0} active</span> • {dashboard.rejectedApplications ?? 0} rejected
+                      </div>
+                    </div>
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                      <IconApps />
+                    </div>
+                  </div>
+
+                  {/* Hired Candidates */}
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100 flex justify-between items-start hover:shadow-md transition-shadow">
+                    <div>
+                      <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Hires</span>
+                      <div className="text-3xl font-extrabold text-emerald-700 mt-2">{dashboard.hiredApplications ?? 0}</div>
+                      <div className="text-xs text-emerald-600 mt-1 font-medium">
+                        +{dashboard.hiresThisMonth ?? 0} hired this month
+                      </div>
+                    </div>
+                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                  </div>
+
+                  {/* Scheduled Interviews */}
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 flex justify-between items-start hover:shadow-md transition-shadow">
+                    <div>
+                      <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Interviews</span>
+                      <div className="text-3xl font-extrabold text-blue-700 mt-2">{dashboard.totalInterviews ?? 0}</div>
+                      <div className="text-xs text-blue-600 mt-1 font-medium">
+                        {dashboard.interviewsThisWeek ?? 0} scheduled this week
+                      </div>
+                    </div>
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                      <IconInterviews />
+                    </div>
+                  </div>
+
+                  {/* Stalled Alerts / Open Jobs */}
+                  <div className={`bg-white p-5 rounded-2xl shadow-sm border ${dashboard.stalledCount > 0 ? 'border-red-200 bg-red-50/20' : 'border-gray-100'} flex justify-between items-start hover:shadow-md transition-shadow`}>
+                    <div>
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stalled Alerts</span>
+                      <div className={`text-3xl font-extrabold mt-2 ${dashboard.stalledCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>{dashboard.stalledCount ?? 0}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {dashboard.openJobs ?? 0} open job position{dashboard.openJobs === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    <div className={`p-3 rounded-xl ${dashboard.stalledCount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
+                      <IconAlerts />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex flex-col relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 text-red-500"><IconAlerts /></div>
-                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Stalled Applications</span>
-                  <span className="text-4xl font-bold text-red-600 mt-2">{dashboard.stalledCount}</span>
+
+                {/* Pipeline Breakdown & Stage Distribution */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Applications by Stage */}
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-base font-bold text-gray-900">Active Candidates by Stage</h3>
+                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
+                          {dashboard.activeApplications ?? 0} Active Candidates
+                        </span>
+                      </div>
+                      <div className="space-y-4">
+                        {['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED'].map(stage => {
+                          const count = (dashboard.applicationsByStage && dashboard.applicationsByStage[stage]) || 0;
+                          const total = dashboard.activeApplications || 1;
+                          const pct = Math.round((count / total) * 100);
+                          const stageColors: Record<string, string> = {
+                            APPLIED: 'bg-blue-500',
+                            SCREENING: 'bg-indigo-500',
+                            INTERVIEW: 'bg-purple-500',
+                            OFFER: 'bg-amber-500',
+                            HIRED: 'bg-emerald-500'
+                          };
+                          return (
+                            <div key={stage} className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-medium">
+                                <span className="text-gray-700 font-semibold">{stage}</span>
+                                <span className="text-gray-500">{count} candidates ({pct}%)</span>
+                              </div>
+                              <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                <div
+                                  className={`h-2.5 rounded-full transition-all duration-500 ${stageColors[stage] || 'bg-indigo-500'}`}
+                                  style={{ width: `${Math.max(pct, count > 0 ? 5 : 0)}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Applications by Job Opening */}
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-base font-bold text-gray-900">Active Candidates by Position</h3>
+                        <button onClick={() => setView('jobs')} className="text-xs text-indigo-600 font-semibold hover:underline">
+                          View All Jobs &rarr;
+                        </button>
+                      </div>
+                      {!dashboard.applicationsByJob || Object.keys(dashboard.applicationsByJob).length === 0 ? (
+                        <div className="py-8 text-center text-sm text-gray-400">No active applications by job position.</div>
+                      ) : (
+                        <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                          {Object.entries(dashboard.applicationsByJob).map(([jobTitle, count]: [string, any]) => (
+                            <div key={jobTitle} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100/80 transition-colors">
+                              <span className="text-sm font-semibold text-gray-800 truncate max-w-[220px]">{jobTitle}</span>
+                              <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
+                                {count} {count === 1 ? 'applicant' : 'applicants'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Open Jobs</span>
-                  <span className="text-4xl font-bold text-gray-900 mt-2">{dashboard.openJobs}</span>
-                </div>
+
+                {/* Application Volume Weekly Chart Trend */}
+                {dashboard.applicationsPerWeekChart && Object.keys(dashboard.applicationsPerWeekChart).length > 0 && (
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900">Weekly Application Volume (Last 3 Months)</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Tracking candidate inflow per week</p>
+                      </div>
+                    </div>
+                    <div className="flex items-end gap-3 h-36 pt-4 border-b border-gray-100 overflow-x-auto pb-2">
+                      {Object.entries(dashboard.applicationsPerWeekChart).map(([week, count]: [string, any]) => {
+                        const maxCount = Math.max(...Object.values(dashboard.applicationsPerWeekChart).map((v: any) => Number(v) || 1), 1);
+                        const heightPct = Math.max(Math.round((count / maxCount) * 100), 12);
+                        const formattedDate = new Date(week).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        return (
+                          <div key={week} className="flex-1 min-w-[36px] flex flex-col items-center gap-1.5 group">
+                            <span className="text-[10px] font-bold text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {count}
+                            </span>
+                            <div
+                              className="w-full bg-indigo-500 hover:bg-indigo-600 rounded-t-md transition-all duration-300 shadow-sm"
+                              style={{ height: `${heightPct}%` }}
+                            ></div>
+                            <span className="text-[10px] text-gray-400 truncate w-full text-center">
+                              {formattedDate}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-8">
