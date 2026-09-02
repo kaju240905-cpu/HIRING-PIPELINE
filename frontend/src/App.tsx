@@ -34,6 +34,11 @@ export default function App() {
   const [isCreatingJob, setIsCreatingJob] = useState(false);
   const [createJobError, setCreateJobError] = useState('');
 
+  const [showEditJob, setShowEditJob] = useState(false);
+  const [editJobData, setEditJobData] = useState<any>(null);
+  const [isEditingJob, setIsEditingJob] = useState(false);
+  const [editJobError, setEditJobError] = useState('');
+
   // App Details State
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [isAppLoading, setIsAppLoading] = useState(false);
@@ -434,6 +439,36 @@ export default function App() {
     } else {
       const err = await res.json();
       setCreateJobError(err.error || 'Failed to create job');
+    }
+  };
+
+  const handleEditJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editJobData) return;
+    setEditJobError('');
+    setIsEditingJob(true);
+
+    try {
+      const res = await apiFetch(`${API_BASE}/jobs/${editJobData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editJobData.title,
+          department: editJobData.department,
+          description: editJobData.description
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update job');
+
+      setJobs(jobs.map(j => j.id === editJobData.id ? data : j));
+      if (selectedJob?.id === editJobData.id) setSelectedJob(data);
+      setShowEditJob(false);
+    } catch (err: any) {
+      setEditJobError(err.message || 'Network error');
+    } finally {
+      setIsEditingJob(false);
     }
   };
 
@@ -1696,6 +1731,37 @@ export default function App() {
               </div>
             </div>
 
+            {showEditJob && editJobData && (
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Job Opening</h3>
+                  {editJobError && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{editJobError}</div>}
+                  <form onSubmit={handleEditJob} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                      <input required type="text" value={editJobData.title} onChange={e => setEditJobData({ ...editJobData, title: e.target.value })} className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                      <input required type="text" value={editJobData.department} onChange={e => setEditJobData({ ...editJobData, department: e.target.value })} className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea required rows={4} value={editJobData.description} onChange={e => setEditJobData({ ...editJobData, description: e.target.value })} className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2 border"></textarea>
+                    </div>
+                    <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse gap-3">
+                      <button type="submit" disabled={isEditingJob} className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm disabled:opacity-70">
+                        {isEditingJob ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button type="button" onClick={() => setShowEditJob(false)} className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+            
             {showCreateJob && (
               <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
@@ -1745,12 +1811,20 @@ export default function App() {
                             Restore Job
                           </button>
                         ) : (
-                          <button
-                            onClick={() => { setArchiveConfirmJob(selectedJob); setArchiveJobError(''); }}
-                            className="px-3 py-1.5 bg-white text-amber-700 hover:bg-amber-50 rounded-lg text-sm font-medium border border-amber-200"
-                          >
-                            Archive Job
-                          </button>
+                          <>
+                            <button
+                              onClick={() => { setEditJobData(selectedJob); setShowEditJob(true); }}
+                              className="px-3 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-sm font-medium border border-blue-200"
+                            >
+                              Edit Job
+                            </button>
+                            <button
+                              onClick={() => { setArchiveConfirmJob(selectedJob); setArchiveJobError(''); }}
+                              className="px-3 py-1.5 bg-white text-amber-700 hover:bg-amber-50 rounded-lg text-sm font-medium border border-amber-200"
+                            >
+                              Archive Job
+                            </button>
+                          </>
                         )
                       )}
                       <button onClick={() => setSelectedJob(null)} className="text-gray-400 hover:text-gray-500">
@@ -1890,7 +1964,10 @@ export default function App() {
                           job.status === 'ARCHIVED' ? (
                             <button onClick={() => handleRestoreJob(job)} className="text-green-600 hover:text-green-900">Restore</button>
                           ) : (
-                            <button onClick={() => { setArchiveConfirmJob(job); setArchiveJobError(''); }} className="text-amber-600 hover:text-amber-900">Archive</button>
+                            <>
+                              <button onClick={() => { setEditJobData(job); setShowEditJob(true); }} className="text-blue-600 hover:text-blue-900">Edit</button>
+                              <button onClick={() => { setArchiveConfirmJob(job); setArchiveJobError(''); }} className="text-amber-600 hover:text-amber-900">Archive</button>
+                            </>
                           )
                         )}
                       </td>

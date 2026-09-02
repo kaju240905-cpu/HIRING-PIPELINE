@@ -7,11 +7,11 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRecruiter);
 
+router.post('/bulk/advance', bulkAdvance);
+router.post('/bulk/reject', bulkReject);
+
 router.post('/:id/advance', advanceApplication);
 router.post('/:id/reject', rejectApplication);
 router.post('/:id/reinstate', reinstateApplication);
-
-router.post('/bulk/advance', bulkAdvance);
-router.post('/bulk/reject', bulkReject);
 
 export default router;
