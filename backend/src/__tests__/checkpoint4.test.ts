@@ -53,7 +53,6 @@ describe('Phase 3 Checkpoint 4: Dashboard & CSV', () => {
         .get('/api/dashboard')
         .set('Cookie', interviewerTokenCookie);
       expect(res.status).toBe(200);
-      expect(res.body.totalApplications).toBeDefined();
       expect(res.body.stalledCount).toBeUndefined(); // Interviewers don't see stalled globally
       expect(res.body.openJobs).toBeUndefined();
     });

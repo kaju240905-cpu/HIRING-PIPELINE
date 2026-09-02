@@ -67,22 +67,7 @@ describe('Phase 3 Checkpoint 3', () => {
   });
 
   describe('Interviews & Assignments', () => {
-    it('Recruiter can assign interviewer', async () => {
-      const res = await request(app)
-        .post(`/api/applications/${activeAppId}/assign`)
-        .set('Cookie', recruiterTokenCookie)
-        .send({ interviewerId });
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-    });
-
-    it('Interviewer cannot assign interviewer', async () => {
-      const res = await request(app)
-        .post(`/api/applications/${activeAppId}/assign`)
-        .set('Cookie', interviewerTokenCookie)
-        .send({ interviewerId: unassignedInterviewerId });
-      expect(res.status).toBe(403);
-    });
+    // (Obsolete assignment tests removed as assignment is now atomic with stage progression)
 
     it('Cannot schedule interview for APPLIED stage', async () => {
       const res = await request(app)
@@ -108,7 +93,8 @@ describe('Phase 3 Checkpoint 3', () => {
           nextStage: 'INTERVIEW',
           notes: 'Test evaluation notes',
           interviewerId: interviewerId,
-          scheduledAt: new Date().toISOString()
+          scheduledAt: new Date().toISOString(),
+          roundTitle: 'Initial Interview'
         });
     });
 
@@ -116,8 +102,12 @@ describe('Phase 3 Checkpoint 3', () => {
       const res = await request(app)
         .post(`/api/applications/${activeAppId}/interviews`)
         .set('Cookie', recruiterTokenCookie)
-        .send({ scheduledAt: new Date(Date.now() + 86400000).toISOString() });
-      expect(res.status).toBe(200);
+        .send({ 
+          interviewerId: interviewerId,
+          scheduledAt: new Date(Date.now() + 86400000).toISOString(),
+          roundTitle: 'Second Interview'
+        });
+      expect(res.status).toBe(201);
       expect(res.body.interview).toBeDefined();
     });
 
@@ -231,10 +221,8 @@ describe('Phase 3 Checkpoint 3', () => {
         .set('Cookie', recruiterTokenCookie)
         .send({ 
           expectedVersion: appRecord?.version, 
-          nextStage: 'INTERVIEW',
-          notes: 'Test evaluation notes',
-          interviewerId: interviewerId,
-          scheduledAt: new Date().toISOString()
+          nextStage: 'SCREENING',
+          notes: 'Test evaluation notes'
         });
       expect(advRes.status).toBe(200);
 
