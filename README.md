@@ -188,3 +188,56 @@ We're telling you this now because it should change how carefully you document a
 The 10 goals stated in this brief are the cutoff. Meet all 10, solidly, and you have a complete submission.
 
 Stretch ideas are optional. They exist for candidates who finish the 10 with time left and want to keep building — they are never required, and they do not make up for a goal you didn't hit. Doing 8 goals well beats doing 10 goals badly. If time is short, finish fewer goals properly rather than leaving all ten half-done.
+
+---
+
+## Production Deployment
+
+This project is fully prepared for a production deployment across a managed PostgreSQL database, a Render backend, and a Vercel frontend.
+
+### 1. Database Deployment
+1. Provision a PostgreSQL database (e.g., Neon, Render PostgreSQL, or Supabase).
+2. Obtain the production connection string. This will be your `DATABASE_URL`.
+3. The database schema must be applied using the Prisma deploy command. Do **not** use `prisma db push` in production.
+   - Command: `npx prisma migrate deploy`
+
+### 2. Backend Deployment on Render
+Deploy the `backend` directory as a Web Service on Render.
+- **Repository:** https://github.com/kaju240905-cpu/HIRING-PIPELINE.git
+- **Branch:** `main`
+- **Root Directory:** `backend`
+- **Build Command:** `npm install && npm run build`
+- **Start Command:** `npm start`
+- **Required Environment Variables:**
+  - `DATABASE_URL` (Your production database connection string)
+  - `JWT_SECRET` (A strong, randomly generated string)
+  - `FRONTEND_URL` (The exact URL of your Vercel frontend, e.g., `https://my-hiring-pipeline.vercel.app`. **Ensure no trailing slash!**)
+  - `NODE_ENV` (Set to `production`)
+
+### 3. Frontend Deployment on Vercel
+Deploy the `frontend` directory as a Vercel project.
+- **Repository:** https://github.com/kaju240905-cpu/HIRING-PIPELINE.git
+- **Branch:** `main`
+- **Root Directory:** `frontend`
+- **Framework Preset:** Vite
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Required Environment Variables:**
+  - `VITE_API_URL` (The exact URL of your Render backend API, e.g., `https://my-hiring-pipeline-api.onrender.com/api`. **Ensure no trailing slash and include `/api`!**)
+
+### 4. Post-Deployment Connection (Order of Operations)
+1. Create your production database.
+2. Deploy the Render backend (it will fail CORS initially, which is expected).
+3. Obtain the assigned `.onrender.com` backend URL.
+4. Add `VITE_API_URL` to your Vercel project settings.
+5. Deploy the Vercel frontend.
+6. Obtain the assigned `.vercel.app` frontend URL.
+7. Add `FRONTEND_URL` to your Render project environment variables.
+8. Redeploy the Render backend so it accepts CORS from Vercel.
+9. Test authentication.
+
+### 5. Post-Deployment Testing Checklist
+- [ ] **Authentication:** Login as recruiter and interviewer, verify cookies persist across page reloads.
+- [ ] **Recruiter:** Create/archive/restore jobs, view applications, schedule interviews, archive apps.
+- [ ] **Interviewer:** Ensure unrelated candidates return 403, and feedback can only be submitted after the scheduled time.
+- [ ] **General:** Verify all API calls use HTTPS, cross-domain CORS functions properly, and no `.env` files are accidentally exposed.

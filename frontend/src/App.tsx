@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+const apiFetch = async (input: string | URL | globalThis.Request, init?: RequestInit) => {
+  return fetch(input, { ...init, credentials: 'include' });
+};
 
 const IconDashboard = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>;
 const IconJobs = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
@@ -97,7 +101,7 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/auth/me`)
+    apiFetch(`${API_BASE}/auth/me`)
       .then(res => res.json())
       .then(data => {
         if (!data.error && data.id) {
@@ -111,7 +115,7 @@ export default function App() {
   const login = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await apiFetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: e.target.email.value, password: e.target.password.value })
@@ -127,7 +131,7 @@ export default function App() {
   };
 
   const logout = async () => {
-    await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+    await apiFetch(`${API_BASE}/auth/logout`, { method: 'POST' });
     setUser(null);
     setView('login');
   };
@@ -136,7 +140,7 @@ export default function App() {
     setIsLoadingDashboard(true);
     setDashboardError('');
     try {
-      const res = await fetch(`${API_BASE}/dashboard`);
+      const res = await apiFetch(`${API_BASE}/dashboard`);
       if (res.ok) {
         setDashboard(await res.json());
       } else {
@@ -151,7 +155,7 @@ export default function App() {
   };
 
   const loadJobs = async () => {
-    const res = await fetch(`${API_BASE}/jobs?showArchived=${showArchivedJobs}`);
+    const res = await apiFetch(`${API_BASE}/jobs?showArchived=${showArchivedJobs}`);
     if (res.ok) setJobs(await res.json());
   };
 
@@ -162,7 +166,7 @@ export default function App() {
   }, [view, showArchivedJobs]);
 
   const loadJobApplications = async (jobId: string) => {
-    const res = await fetch(`${API_BASE}/applications?jobId=${encodeURIComponent(jobId)}`);
+    const res = await apiFetch(`${API_BASE}/applications?jobId=${encodeURIComponent(jobId)}`);
     if (res.ok) {
       const data = await res.json();
       setJobApplications(data.data || []);
@@ -184,7 +188,7 @@ export default function App() {
     if (appJobId) url += `jobId=${encodeURIComponent(appJobId)}&`;
     if (showArchivedApps) url += `showArchived=true&`;
 
-    const res = await fetch(url);
+    const res = await apiFetch(url);
     if (res.ok) {
       const data = await res.json();
       setApplications(data.data || []);
@@ -196,7 +200,7 @@ export default function App() {
     setIsLoadingInterviews(true);
     setGlobalInterviewsError('');
     try {
-      const res = await fetch(`${API_BASE}/interviews`);
+      const res = await apiFetch(`${API_BASE}/interviews`);
       if (res.ok) {
         const data = await res.json();
         setGlobalInterviews(data.interviews || []);
@@ -215,7 +219,7 @@ export default function App() {
     setAppError('');
     setSelectedApplication({});
     try {
-      const res = await fetch(`${API_BASE}/applications/${id}`);
+      const res = await apiFetch(`${API_BASE}/applications/${id}`);
       if (res.ok) {
         setSelectedApplication(await res.json());
       } else {
@@ -277,7 +281,7 @@ export default function App() {
     setFeedbackError('');
     try {
       const method = feedbackMode === 'edit' ? 'PATCH' : 'POST';
-      const res = await fetch(`${API_BASE}/interviews/${feedbackModalInterview.id}/feedback`, {
+      const res = await apiFetch(`${API_BASE}/interviews/${feedbackModalInterview.id}/feedback`, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -351,7 +355,7 @@ export default function App() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/applications/bulk/${action}`, {
+      const res = await apiFetch(`${API_BASE}/applications/bulk/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -377,7 +381,7 @@ export default function App() {
     if (!selectedApplication) return;
     setIsActionLoading(true);
     setActionError('');
-    const res = await fetch(`${API_BASE}/applications/${selectedApplication.id}/${action}`, {
+    const res = await apiFetch(`${API_BASE}/applications/${selectedApplication.id}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -393,12 +397,12 @@ export default function App() {
   };
 
   const loadInterviewers = async () => {
-    const res = await fetch(`${API_BASE}/auth/interviewers`);
+    const res = await apiFetch(`${API_BASE}/auth/interviewers`);
     if (res.ok) setInterviewers(await res.json());
   };
 
   const loadStalled = async () => {
-    const res = await fetch(`${API_BASE}/applications/stalled`);
+    const res = await apiFetch(`${API_BASE}/applications/stalled`);
     if (res.ok) {
       const data = await res.json();
       setStalled(data.applications || []);
@@ -416,7 +420,7 @@ export default function App() {
     setCreateJobError('');
     setIsCreatingJob(true);
 
-    const res = await fetch(`${API_BASE}/jobs`, {
+    const res = await apiFetch(`${API_BASE}/jobs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newJob)
@@ -437,7 +441,7 @@ export default function App() {
     setIsArchivingJob(true);
     setArchiveJobError('');
     try {
-      const res = await fetch(`${API_BASE}/jobs/${job.id}/archive`, {
+      const res = await apiFetch(`${API_BASE}/jobs/${job.id}/archive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -461,7 +465,7 @@ export default function App() {
 
   const handleRestoreJob = async (job: any) => {
     try {
-      const res = await fetch(`${API_BASE}/jobs/${job.id}/restore`, {
+      const res = await apiFetch(`${API_BASE}/jobs/${job.id}/restore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -482,7 +486,7 @@ export default function App() {
 
   const handleRestoreApp = async (app: any) => {
     try {
-      const res = await fetch(`${API_BASE}/applications/${app.id}/restore`, {
+      const res = await apiFetch(`${API_BASE}/applications/${app.id}/restore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: 'Restored via recruiter dashboard' })
@@ -1006,7 +1010,7 @@ export default function App() {
                     setIsActionLoading(true);
                     setAdvanceError('');
                     try {
-                      const res = await fetch(`${API_BASE}/applications/${selectedApplication.id}/advance`, {
+                      const res = await apiFetch(`${API_BASE}/applications/${selectedApplication.id}/advance`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1110,7 +1114,7 @@ export default function App() {
                     setIsAdditionalInterviewLoading(true);
                     setAdditionalInterviewError('');
                     try {
-                      const res = await fetch(`${API_BASE}/applications/${selectedApplication.id}/interviews`, {
+                      const res = await apiFetch(`${API_BASE}/applications/${selectedApplication.id}/interviews`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1178,7 +1182,7 @@ export default function App() {
                     setIsArchiving(true);
                     setArchiveError('');
                     try {
-                      const res = await fetch(`${API_BASE}/applications/${archiveConfirmApp.id}/archive`, {
+                      const res = await apiFetch(`${API_BASE}/applications/${archiveConfirmApp.id}/archive`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ notes: 'Archived via recruiter dashboard' })

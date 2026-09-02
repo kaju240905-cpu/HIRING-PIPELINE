@@ -28,7 +28,7 @@ export function setAuthCookie(res: Response, token: string) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/',
   });
@@ -38,7 +38,7 @@ export function clearAuthCookie(res: Response) {
   res.cookie(COOKIE_NAME, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     maxAge: 0,
     path: '/',
   });
