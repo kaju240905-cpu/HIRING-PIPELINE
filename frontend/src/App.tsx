@@ -27,6 +27,7 @@ export default function App() {
   const [jobApplications, setJobApplications] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [stalled, setStalled] = useState<any[]>([]);
+  const [dismissingAlertId, setDismissingAlertId] = useState<string | null>(null);
 
   // Job Modals State
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -411,6 +412,27 @@ export default function App() {
     if (res.ok) {
       const data = await res.json();
       setStalled(data.applications || []);
+    }
+  };
+
+  const handleDismissAlert = async (appId: string) => {
+    setDismissingAlertId(appId);
+    try {
+      const res = await apiFetch(`${API_BASE}/applications/${appId}/stalled/dismiss`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        await loadStalled();
+        loadDashboard();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to dismiss alert');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Network error');
+    } finally {
+      setDismissingAlertId(null);
     }
   };
 
@@ -2127,12 +2149,35 @@ export default function App() {
       case 'alerts':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Stalled Alerts</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Stalled Alerts</h2>
+              {stalled.length > 0 && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-800">
+                  {stalled.length} Stalled
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stalled.map(app => (
-                <div key={app.id} className="bg-white p-4 rounded-xl shadow-sm border border-red-200 border-l-4 border-l-red-500">
-                  <h3 className="font-medium text-gray-900">{app.candidateName}</h3>
-                  <p className="text-sm text-gray-500 mt-1">Stalled in {app.currentStage}</p>
+                <div key={app.id} className="bg-white p-5 rounded-xl shadow-sm border border-red-200 border-l-4 border-l-red-500 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-base">{app.candidateName}</h3>
+                    <p className="text-xs text-gray-500">{app.candidateEmail}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                        Stalled in {app.currentStage}
+                      </span>
+                    </div>
+                  </div>
+                  {user.role === 'RECRUITER' && (
+                    <button
+                      disabled={dismissingAlertId === app.id}
+                      onClick={() => handleDismissAlert(app.id)}
+                      className="px-3.5 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      {dismissingAlertId === app.id ? 'Dismissing...' : 'Dismiss Alert'}
+                    </button>
+                  )}
                 </div>
               ))}
               {stalled.length === 0 && (
@@ -2141,6 +2186,7 @@ export default function App() {
                     <IconAlerts />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900">No Stalled Applications</h3>
+                  <p className="text-sm text-gray-500 mt-1">All candidates are progressing within stage thresholds.</p>
                 </div>
               )}
             </div>
