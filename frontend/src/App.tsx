@@ -1718,23 +1718,23 @@ export default function App() {
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-xs p-5 rounded-xl border border-gray-200/70 shadow-inner">
-                      <div className="flex items-end gap-3 sm:gap-4 h-44 pt-6 border-b-2 border-indigo-200/80 overflow-x-auto pb-2 px-2">
+                      <div className="flex items-end justify-between gap-3 sm:gap-4 h-52 pt-4 pb-2 px-2 overflow-x-auto">
                         {Object.entries(dashboard.applicationsPerWeekChart).map(([week, count]: [string, any]) => {
                           const maxCount = Math.max(...Object.values(dashboard.applicationsPerWeekChart).map((v: any) => Number(v) || 1), 1);
-                          const heightPct = Math.max(Math.round((count / maxCount) * 100), 16);
+                          const heightPct = Math.max(Math.round((Number(count) / maxCount) * 100), 15);
                           const formattedDate = new Date(week).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
                           return (
-                            <div key={week} className="flex-1 min-w-[44px] flex flex-col items-center gap-2 group">
-                              <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full shadow-2xs transform group-hover:-translate-y-0.5 transition-transform">
+                            <div key={week} className="flex-1 min-w-[48px] h-full flex flex-col justify-end items-center gap-2 group">
+                              <span className="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md shadow-2xs group-hover:scale-105 transition-transform">
                                 {count}
                               </span>
-                              <div className="w-full bg-indigo-100/60 rounded-t-lg p-0.5 h-full flex items-end">
+                              <div className="w-full h-32 bg-indigo-100/70 rounded-t-lg p-1 border border-indigo-200/60 flex items-end shadow-inner">
                                 <div
-                                  className="w-full bg-gradient-to-t from-indigo-700 via-indigo-500 to-purple-500 hover:from-indigo-800 hover:to-purple-600 rounded-t-md transition-all duration-300 shadow-md group-hover:shadow-indigo-300/50"
-                                  style={{ height: `${heightPct}%` }}
+                                  className="w-full bg-gradient-to-t from-indigo-700 via-indigo-500 to-purple-500 hover:from-indigo-800 hover:to-purple-600 rounded-t-md transition-all duration-500 shadow-md group-hover:shadow-indigo-400/50"
+                                  style={{ height: `${heightPct}%`, minHeight: '16px' }}
                                 ></div>
                               </div>
-                              <span className="text-xs font-bold text-gray-700 truncate w-full text-center mt-1">
+                              <span className="text-xs font-bold text-gray-700 truncate w-full text-center mt-0.5">
                                 {formattedDate}
                               </span>
                             </div>
