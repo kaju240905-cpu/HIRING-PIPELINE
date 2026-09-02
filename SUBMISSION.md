@@ -1,57 +1,56 @@
-# Hiring Pipeline Project Submission
+# Submission
 
-## 1. Overview
-This project is a complete Hiring Pipeline system that allows recruiters to manage job openings, track candidates through various pipeline stages, and assign interviewers. It also features a scoped interviewer dashboard where interviewers can view assigned candidates and submit feedback securely.
+## Links
 
-## 2. Live Deployment
-*(Add your live URL here if deploying)*
-**Frontend URL:** https://hiring-pipeline-bay.vercel.app/
-**Backend API URL:** https://hiring-pipeline-backend.onrender.com/
+- **GitHub repository:** https://github.com/kaju240905-cpu/HIRING-PIPELINE.git
+- **Live application:** https://hiring-pipeline-bay.vercel.app/
 
-## 3. GitHub Repository
-**Repository:** https://github.com/kaju240905-cpu/HIRING-PIPELINE.git
+## Notes for the reviewer
 
-## 4. Demo Credentials
+The backend is hosted on a free Render instance, which spins down after 15 minutes of inactivity. **The very first request (e.g., logging in or loading the initial dashboard) might take 50–60 seconds while the server wakes up.** Please be patient on the first load!
 
-The database is seeded with several test accounts to verify role-based permissions and dashboard scoping.
+## Demo credentials
 
-### Recruiter Account
-Has full access to job creation, candidate advancement, and global dashboards.
-- **Email:** `recruiter@example.com`
-- **Password:** `password123`
+| Role | Email | Password |
+|------|-------|----------|
+| Recruiter | recruiter@example.com | password123 |
+| Interviewer | int1@example.com | password123 |
+| Interviewer | int2@example.com | password123 |
 
-### Interviewer Accounts
-Can only see candidates explicitly assigned to them for interviews, and can only submit feedback for their own interviews.
-- **Email:** `int1@example.com`
-- **Password:** `password123`
+## Stack
 
-- **Email:** `int2@example.com`
-- **Password:** `password123`
+| Layer | What you used | Why |
+|-------|---------------|-----|
+| Frontend | React (Vite) + TailwindCSS | Fast development cycle, excellent component ecosystem, and Tailwind allows rapid UI styling without context-switching to CSS files. |
+| Backend | Node.js + Express + TypeScript | Lightweight, unopinionated, and shares types effortlessly with the frontend. |
+| Database | PostgreSQL (Neon) via Prisma ORM | Relational data integrity is critical for a pipeline. Prisma provides fantastic type safety and developer experience. |
+| Hosting | Vercel (Frontend) + Render (Backend) | Both offer generous free tiers and seamless GitHub integrations for continuous deployment. |
 
-## 5. Running Locally
+## Goal checklist
 
-To run the project locally from scratch:
+| # | Goal | Status | Notes |
+|---|------|--------|-------|
+| 1 | Accounts and roles | Done | Enforced on backend with JWT + Role checks (403 Forbidden). |
+| 2 | Job openings | Done | Includes creation, archiving, restoring, and editing jobs. |
+| 3 | Applications inside job openings | Done | Tracked with candidate data and notes. |
+| 4 | A pipeline with rules | Done | Strict validation on stage advancement; rejected apps can only be reinstated to their exact previous stage. |
+| 5 | Interview panel | Done | Interviewers only see candidates explicitly assigned to them. |
+| 6 | Finding candidates | Done | Server-side text search, filtering, and pagination implemented via Prisma queries. |
+| 7 | Acting on many candidates at once | Done | Bulk advance, bulk reject, and CSV export are fully functional for recruiters. |
+| 8 | A dashboard | Done | Tracks headline metrics, active apps, upcoming interviews, and charts. |
+| 9 | History you cannot rewrite | Done | Implemented an append-only `ApplicationHistory` log that includes feedback records. |
+| 10 | Stalled-application alerts | Done | Flags applications in the same stage for >10 days. Recruiter can dismiss alerts (tracked in DB). |
 
-1. **Install dependencies:**
-   ```bash
-   cd backend && npm install
-   cd ../frontend && npm install
-   ```
+## How much time did you actually spend?
 
-2. **Setup Database:**
-   Ensure PostgreSQL is running locally, then in the `backend` directory:
-   ```bash
-   npx prisma migrate dev --name init
-   npx prisma db seed
-   ```
-   *(This will create the schema and populate the demo credentials above).*
+Roughly 12-14 hours, spread across a few days. The bulk of the time was spent designing the database schema properly to support immutable history, optimistic concurrency control, and ensuring the interviewer scope was absolutely airtight.
 
-3. **Start the applications:**
-   Backend: `cd backend && npx tsx src/index.ts`
-   Frontend: `cd frontend && npm run dev`
+## What would you do next, with another 12 hours?
 
-## 6. Project Highlights
-- **Atomic Transactions:** Stage advancements and interview assignments are handled atomically to prevent orphaned states.
-- **Optimistic Concurrency:** Application records use version control to prevent race conditions when multiple recruiters update the same candidate simultaneously.
-- **Role-Based Access Control (RBAC):** All restricted actions (like an interviewer trying to submit feedback for someone else's interview) are strictly blocked at the API level with 403 errors.
-- **Immutable History:** A full audit log is generated automatically for all pipeline movements, and feedback cannot be modified once submitted.
+1. **Refactor the Frontend**: Break down the monolithic `App.tsx` into discrete, reusable components (e.g., `CandidateList`, `JobDashboard`, `Modals`). 
+2. **Structured Interview Scorecards**: Move away from a single text block for feedback and implement custom rubrics per stage.
+3. **Self-Service Scheduling**: Generate unique calendar links for candidates to book their own interview slots directly into the recruiter's calendar.
+
+## What are you least happy with in this codebase, and why?
+
+I am least happy with the frontend architecture. Because I prioritized getting the functionality and API constraints perfectly right on the backend, the React frontend ended up as a massive monolithic `App.tsx` file. While it works and looks good, it violates separation of concerns. In a real-world scenario, this file would be extremely difficult for a team to collaborate on without merge conflicts, and it desperately needs to be refactored into smaller component and context files.
