@@ -2246,7 +2246,12 @@ export default function App() {
                 }`}
             >
               <item.icon />
-              {item.label}
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.id === 'alerts' && dashboard?.stalledCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {dashboard.stalledCount}
+                </span>
+              )}
             </button>
           ))}
         </nav>

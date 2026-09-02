@@ -45,7 +45,8 @@ It provides the user interface for managing the hiring process. The main functio
 
 The frontend communicates with the backend using HTTP requests through the browser `fetch` API.
 
-The application currently uses React state and effects to manage data loading and UI updates.
+> [!NOTE]
+> For the purpose of this initial prototype and the take-home assessment format, the entire frontend UI is consolidated into a single monolithic `App.tsx` file rather than being split into multiple modular component files. The application uses React state and effects to manage data loading and UI updates within this single file.
 
 ---
 
