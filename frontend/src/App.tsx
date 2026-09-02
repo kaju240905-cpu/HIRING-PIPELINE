@@ -1565,57 +1565,62 @@ export default function App() {
                 {/* Metric Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {/* Total Applications */}
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-start hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-br from-white to-indigo-50/40 p-5 rounded-2xl shadow-sm border border-indigo-100/80 flex justify-between items-start hover:shadow-md transition-all group">
                     <div>
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Applications</span>
-                      <div className="text-3xl font-extrabold text-gray-900 mt-2">{dashboard.totalApplications ?? 0}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        <span className="text-emerald-600 font-medium">{dashboard.activeApplications ?? 0} active</span> • {dashboard.rejectedApplications ?? 0} rejected
+                      <span className="text-xs font-bold text-indigo-900/60 uppercase tracking-wider">Total Applications</span>
+                      <div className="text-3xl font-black text-indigo-950 mt-2 tracking-tight">{dashboard.totalApplications ?? 0}</div>
+                      <div className="text-xs mt-1 font-medium text-gray-600 flex items-center gap-1.5">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          {dashboard.activeApplications ?? 0} active
+                        </span>
+                        <span>•</span>
+                        <span className="text-gray-500">{dashboard.rejectedApplications ?? 0} rejected</span>
                       </div>
                     </div>
-                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <div className="p-3 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
                       <IconApps />
                     </div>
                   </div>
 
                   {/* Hired Candidates */}
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100 flex justify-between items-start hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-br from-white to-emerald-50/40 p-5 rounded-2xl shadow-sm border border-emerald-100/80 flex justify-between items-start hover:shadow-md transition-all group">
                     <div>
-                      <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Hires</span>
-                      <div className="text-3xl font-extrabold text-emerald-700 mt-2">{dashboard.hiredApplications ?? 0}</div>
-                      <div className="text-xs text-emerald-600 mt-1 font-medium">
-                        +{dashboard.hiresThisMonth ?? 0} hired this month
+                      <span className="text-xs font-bold text-emerald-900/60 uppercase tracking-wider">Total Hires</span>
+                      <div className="text-3xl font-black text-emerald-950 mt-2 tracking-tight">{dashboard.hiredApplications ?? 0}</div>
+                      <div className="text-xs text-emerald-700 mt-1 font-semibold flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        <span>+{dashboard.hiresThisMonth ?? 0} hired this month</span>
                       </div>
                     </div>
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-200 group-hover:scale-105 transition-transform">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     </div>
                   </div>
 
                   {/* Scheduled Interviews */}
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 flex justify-between items-start hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-br from-white to-blue-50/40 p-5 rounded-2xl shadow-sm border border-blue-100/80 flex justify-between items-start hover:shadow-md transition-all group">
                     <div>
-                      <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Interviews</span>
-                      <div className="text-3xl font-extrabold text-blue-700 mt-2">{dashboard.totalInterviews ?? 0}</div>
-                      <div className="text-xs text-blue-600 mt-1 font-medium">
+                      <span className="text-xs font-bold text-blue-900/60 uppercase tracking-wider">Total Interviews</span>
+                      <div className="text-3xl font-black text-blue-950 mt-2 tracking-tight">{dashboard.totalInterviews ?? 0}</div>
+                      <div className="text-xs text-blue-700 mt-1 font-semibold">
                         {dashboard.interviewsThisWeek ?? 0} scheduled this week
                       </div>
                     </div>
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                    <div className="p-3 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-200 group-hover:scale-105 transition-transform">
                       <IconInterviews />
                     </div>
                   </div>
 
                   {/* Stalled Alerts / Open Jobs */}
-                  <div className={`bg-white p-5 rounded-2xl shadow-sm border ${dashboard.stalledCount > 0 ? 'border-red-200 bg-red-50/20' : 'border-gray-100'} flex justify-between items-start hover:shadow-md transition-shadow`}>
+                  <div className={`p-5 rounded-2xl shadow-sm border flex justify-between items-start hover:shadow-md transition-all group ${dashboard.stalledCount > 0 ? 'bg-gradient-to-br from-red-50 to-amber-50/30 border-red-200' : 'bg-gradient-to-br from-white to-gray-50 border-gray-100'}`}>
                     <div>
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stalled Alerts</span>
-                      <div className={`text-3xl font-extrabold mt-2 ${dashboard.stalledCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>{dashboard.stalledCount ?? 0}</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Stalled Alerts</span>
+                      <div className={`text-3xl font-black mt-2 tracking-tight ${dashboard.stalledCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>{dashboard.stalledCount ?? 0}</div>
+                      <div className="text-xs text-gray-600 mt-1 font-medium">
                         {dashboard.openJobs ?? 0} open job position{dashboard.openJobs === 1 ? '' : 's'}
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${dashboard.stalledCount > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
+                    <div className={`p-3 rounded-xl shadow-md group-hover:scale-105 transition-transform ${dashboard.stalledCount > 0 ? 'bg-red-600 text-white shadow-red-200' : 'bg-gray-700 text-white shadow-gray-200'}`}>
                       <IconAlerts />
                     </div>
                   </div>
@@ -1624,12 +1629,15 @@ export default function App() {
                 {/* Pipeline Breakdown & Stage Distribution */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Applications by Stage */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200/80 flex flex-col justify-between">
                     <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-base font-bold text-gray-900">Active Candidates by Stage</h3>
-                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-                          {dashboard.activeApplications ?? 0} Active Candidates
+                      <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
+                        <div>
+                          <h3 className="text-base font-extrabold text-gray-900">Active Candidates by Stage</h3>
+                          <p className="text-xs text-gray-500 mt-0.5">Pipeline distribution of active candidates</p>
+                        </div>
+                        <span className="text-xs font-bold text-indigo-700 bg-indigo-100/80 border border-indigo-200/60 px-3 py-1 rounded-full shadow-xs">
+                          {dashboard.activeApplications ?? 0} Active
                         </span>
                       </div>
                       <div className="space-y-4">
@@ -1637,23 +1645,23 @@ export default function App() {
                           const count = (dashboard.applicationsByStage && dashboard.applicationsByStage[stage]) || 0;
                           const total = dashboard.activeApplications || 1;
                           const pct = Math.round((count / total) * 100);
-                          const stageColors: Record<string, string> = {
-                            APPLIED: 'bg-blue-500',
-                            SCREENING: 'bg-indigo-500',
-                            INTERVIEW: 'bg-purple-500',
-                            OFFER: 'bg-amber-500',
-                            HIRED: 'bg-emerald-500'
+                          const stageGradients: Record<string, string> = {
+                            APPLIED: 'from-blue-600 to-cyan-500',
+                            SCREENING: 'from-indigo-600 to-blue-500',
+                            INTERVIEW: 'from-purple-600 to-indigo-500',
+                            OFFER: 'from-amber-500 to-orange-500',
+                            HIRED: 'from-emerald-600 to-teal-500'
                           };
                           return (
                             <div key={stage} className="space-y-1.5">
                               <div className="flex justify-between text-xs font-medium">
-                                <span className="text-gray-700 font-semibold">{stage}</span>
-                                <span className="text-gray-500">{count} candidates ({pct}%)</span>
+                                <span className="text-gray-800 font-bold">{stage}</span>
+                                <span className="text-gray-600 font-semibold">{count} candidates <span className="text-gray-400 font-normal">({pct}%)</span></span>
                               </div>
-                              <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                              <div className="w-full bg-gray-100 rounded-full h-3 p-0.5 overflow-hidden border border-gray-100">
                                 <div
-                                  className={`h-2.5 rounded-full transition-all duration-500 ${stageColors[stage] || 'bg-indigo-500'}`}
-                                  style={{ width: `${Math.max(pct, count > 0 ? 5 : 0)}%` }}
+                                  className={`h-full rounded-full bg-gradient-to-r ${stageGradients[stage] || 'from-indigo-600 to-purple-500'} transition-all duration-500 shadow-xs`}
+                                  style={{ width: `${Math.max(pct, count > 0 ? 6 : 0)}%` }}
                                 ></div>
                               </div>
                             </div>
@@ -1664,22 +1672,25 @@ export default function App() {
                   </div>
 
                   {/* Applications by Job Opening */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200/80 flex flex-col justify-between">
                     <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-base font-bold text-gray-900">Active Candidates by Position</h3>
-                        <button onClick={() => setView('jobs')} className="text-xs text-indigo-600 font-semibold hover:underline">
-                          View All Jobs &rarr;
+                      <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
+                        <div>
+                          <h3 className="text-base font-extrabold text-gray-900">Active Candidates by Position</h3>
+                          <p className="text-xs text-gray-500 mt-0.5">Application count grouped by opening</p>
+                        </div>
+                        <button onClick={() => setView('jobs')} className="text-xs text-indigo-600 font-bold hover:text-indigo-800 transition-colors">
+                          View Jobs &rarr;
                         </button>
                       </div>
                       {!dashboard.applicationsByJob || Object.keys(dashboard.applicationsByJob).length === 0 ? (
-                        <div className="py-8 text-center text-sm text-gray-400">No active applications by job position.</div>
+                        <div className="py-12 text-center text-sm text-gray-400 italic bg-gray-50/50 rounded-xl border border-dashed border-gray-200">No active applications by job position.</div>
                       ) : (
                         <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                           {Object.entries(dashboard.applicationsByJob).map(([jobTitle, count]: [string, any]) => (
-                            <div key={jobTitle} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100/80 transition-colors">
-                              <span className="text-sm font-semibold text-gray-800 truncate max-w-[220px]">{jobTitle}</span>
-                              <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
+                            <div key={jobTitle} className="flex justify-between items-center p-3.5 bg-gradient-to-r from-gray-50 to-indigo-50/30 rounded-xl border border-gray-100 hover:border-indigo-200 hover:shadow-xs transition-all">
+                              <span className="text-sm font-bold text-gray-800 truncate max-w-[220px]">{jobTitle}</span>
+                              <span className="text-xs font-extrabold text-indigo-700 bg-indigo-100/90 border border-indigo-200/80 px-3 py-1 rounded-full shadow-xs">
                                 {count} {count === 1 ? 'applicant' : 'applicants'}
                               </span>
                             </div>
@@ -1692,33 +1703,44 @@ export default function App() {
 
                 {/* Application Volume Weekly Chart Trend */}
                 {dashboard.applicationsPerWeekChart && Object.keys(dashboard.applicationsPerWeekChart).length > 0 && (
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                    <div className="flex justify-between items-center">
+                  <div className="bg-gradient-to-br from-white via-indigo-50/20 to-purple-50/30 p-6 rounded-2xl shadow-sm border border-indigo-100/80 space-y-5">
+                    <div className="flex justify-between items-center border-b border-gray-200/60 pb-3">
                       <div>
-                        <h3 className="text-base font-bold text-gray-900">Weekly Application Volume (Last 3 Months)</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">Tracking candidate inflow per week</p>
+                        <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+                          Weekly Application Volume (Last 3 Months)
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Tracking applicant inflow trends per week</p>
                       </div>
+                      <span className="text-xs font-bold text-indigo-800 bg-indigo-100 px-3 py-1 rounded-full border border-indigo-200 shadow-xs">
+                        {Object.values(dashboard.applicationsPerWeekChart).reduce((a: any, b: any) => Number(a) + Number(b), 0)} Total Inflow
+                      </span>
                     </div>
-                    <div className="flex items-end gap-3 h-36 pt-4 border-b border-gray-100 overflow-x-auto pb-2">
-                      {Object.entries(dashboard.applicationsPerWeekChart).map(([week, count]: [string, any]) => {
-                        const maxCount = Math.max(...Object.values(dashboard.applicationsPerWeekChart).map((v: any) => Number(v) || 1), 1);
-                        const heightPct = Math.max(Math.round((count / maxCount) * 100), 12);
-                        const formattedDate = new Date(week).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                        return (
-                          <div key={week} className="flex-1 min-w-[36px] flex flex-col items-center gap-1.5 group">
-                            <span className="text-[10px] font-bold text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {count}
-                            </span>
-                            <div
-                              className="w-full bg-indigo-500 hover:bg-indigo-600 rounded-t-md transition-all duration-300 shadow-sm"
-                              style={{ height: `${heightPct}%` }}
-                            ></div>
-                            <span className="text-[10px] text-gray-400 truncate w-full text-center">
-                              {formattedDate}
-                            </span>
-                          </div>
-                        );
-                      })}
+
+                    <div className="bg-white/80 backdrop-blur-xs p-5 rounded-xl border border-gray-200/70 shadow-inner">
+                      <div className="flex items-end gap-3 sm:gap-4 h-44 pt-6 border-b-2 border-indigo-200/80 overflow-x-auto pb-2 px-2">
+                        {Object.entries(dashboard.applicationsPerWeekChart).map(([week, count]: [string, any]) => {
+                          const maxCount = Math.max(...Object.values(dashboard.applicationsPerWeekChart).map((v: any) => Number(v) || 1), 1);
+                          const heightPct = Math.max(Math.round((count / maxCount) * 100), 16);
+                          const formattedDate = new Date(week).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                          return (
+                            <div key={week} className="flex-1 min-w-[44px] flex flex-col items-center gap-2 group">
+                              <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full shadow-2xs transform group-hover:-translate-y-0.5 transition-transform">
+                                {count}
+                              </span>
+                              <div className="w-full bg-indigo-100/60 rounded-t-lg p-0.5 h-full flex items-end">
+                                <div
+                                  className="w-full bg-gradient-to-t from-indigo-700 via-indigo-500 to-purple-500 hover:from-indigo-800 hover:to-purple-600 rounded-t-md transition-all duration-300 shadow-md group-hover:shadow-indigo-300/50"
+                                  style={{ height: `${heightPct}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs font-bold text-gray-700 truncate w-full text-center mt-1">
+                                {formattedDate}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
