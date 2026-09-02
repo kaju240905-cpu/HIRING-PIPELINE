@@ -108,40 +108,98 @@ export const getDashboardMetrics = async (req: any, res: Response) => {
       });
     } else {
       // Interviewer metrics
-      const assignedApps = await prisma.interviewerAssignment.findMany({
-        where: { interviewerId: userId },
-        select: { applicationId: true }
-      });
-      const assignedAppIds = assignedApps.map(a => a.applicationId);
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(now);
+      todayEnd.setHours(23, 59, 59, 999);
 
       const [
-        totalAssigned,
-        activeAssigned,
-        totalInterviews,
-        interviewsThisWeek
+        todayInterviewsCount,
+        upcomingInterviewsCount,
+        completedInterviewsCount,
+        upcomingInterviews,
+        todayInterviews
       ] = await Promise.all([
-        prisma.application.count({ where: { id: { in: assignedAppIds } } }),
-        prisma.application.count({ where: { id: { in: assignedAppIds }, status: ApplicationStatus.ACTIVE } }),
-        prisma.interview.count({ where: { applicationId: { in: assignedAppIds } } }),
-        prisma.interview.count({ where: { applicationId: { in: assignedAppIds }, scheduledAt: { gte: startOfWeek } } })
+        prisma.interview.count({
+          where: {
+            interviewerId: userId,
+            scheduledAt: { gte: todayStart, lte: todayEnd }
+          }
+        }),
+        prisma.interview.count({
+          where: {
+            interviewerId: userId,
+            status: 'SCHEDULED',
+            scheduledAt: { gt: now }
+          }
+        }),
+        prisma.interview.count({
+          where: {
+            interviewerId: userId,
+            status: 'COMPLETED'
+          }
+        }),
+        prisma.interview.findMany({
+          where: {
+            interviewerId: userId,
+            status: 'SCHEDULED',
+            scheduledAt: { gt: now }
+          },
+          orderBy: { scheduledAt: 'asc' },
+          include: {
+            interviewer: {
+              select: { id: true, email: true, role: true }
+            },
+            application: {
+              include: {
+                job: {
+                  select: { title: true }
+                }
+              }
+            },
+            feedback: {
+              include: {
+                interviewer: {
+                  select: { id: true, email: true, role: true }
+                }
+              }
+            }
+          }
+        }),
+        prisma.interview.findMany({
+          where: {
+            interviewerId: userId,
+            scheduledAt: { gte: todayStart, lte: todayEnd }
+          },
+          orderBy: { scheduledAt: 'asc' },
+          include: {
+            interviewer: {
+              select: { id: true, email: true, role: true }
+            },
+            application: {
+              include: {
+                job: {
+                  select: { title: true }
+                }
+              }
+            },
+            feedback: {
+              include: {
+                interviewer: {
+                  select: { id: true, email: true, role: true }
+                }
+              }
+            }
+          }
+        })
       ]);
 
-      const appsByStageData = await prisma.application.groupBy({
-        by: ['currentStage'],
-        _count: { id: true },
-        where: { id: { in: assignedAppIds }, status: ApplicationStatus.ACTIVE }
-      });
-      const applicationsByStage = appsByStageData.reduce((acc, curr) => {
-        acc[curr.currentStage] = curr._count.id;
-        return acc;
-      }, {} as Record<string, number>);
-
       return res.json({
-        totalApplications: totalAssigned,
-        activeApplications: activeAssigned,
-        totalInterviews,
-        interviewsThisWeek,
-        applicationsByStage
+        todayInterviewsCount,
+        upcomingInterviewsCount,
+        completedInterviewsCount,
+        upcomingInterviews,
+        todayInterviews
       });
     }
   } catch (error) {

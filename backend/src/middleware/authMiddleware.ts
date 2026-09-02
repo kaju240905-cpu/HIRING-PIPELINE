@@ -61,11 +61,22 @@ export async function requireInterviewerAssignment(req: Request, res: Response, 
       },
     });
 
-    if (!assignment) {
-      return res.status(403).json({ error: 'Access denied: You are not assigned to this application' });
+    if (assignment) {
+      return next();
     }
 
-    next();
+    const hasInterview = await prisma.interview.findFirst({
+      where: {
+        applicationId,
+        interviewerId: req.user.userId,
+      },
+    });
+
+    if (hasInterview) {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Access denied: You are not assigned to this application' });
   } catch (error) {
     console.error('Error checking interviewer assignment:', error);
     res.status(500).json({ error: 'Internal server error' });

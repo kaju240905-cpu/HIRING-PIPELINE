@@ -463,6 +463,28 @@ The application archiving subsystem provides non-destructive removal of applicat
    - Interview scheduling (`POST /api/applications/:id/interviews`) is rejected with HTTP 400.
 4. **Data Preservation & Read Access:** Archiving never deletes candidate records, interview history, assignments, or feedback. When viewing an archived application, all previous data remains accessible in a read-only state.
 
+---
+
+## 11. Interviewer Dashboard & Scoped Navigation Architecture
+
+1. **Role-Based Navigation Filtering:** The frontend navigation items (`navItems`) dynamically adapt to the authenticated user's role:
+   - **Recruiter:** Full access to Dashboard, Jobs, Applications, Pipeline, Interviews, and Stalled Alerts.
+   - **Interviewer:** Scoped strictly to Dashboard, My Interviews, and Sign Out. Recruiter management views (Jobs, Applications, Pipeline, Alerts) are completely removed from navigation. A view guard automatically redirects interviewers back to Dashboard if an unauthorized view route is requested.
+2. **Interviewer Dashboard API (`GET /api/dashboard`):**
+   - Detects `req.user.role === 'INTERVIEWER'` via authenticated JWT session.
+   - Computes personal metrics scoped by `interviewerId === req.user.userId`:
+     - **Today's Interviews:** `todayInterviewsCount` (interviews occurring between 00:00:00 and 23:59:59 today).
+     - **Upcoming Interviews:** `upcomingInterviewsCount` (future scheduled sessions where `scheduledAt > now`).
+     - **Completed Interviews:** `completedInterviewsCount` (past scheduled sessions where `scheduledAt < now`).
+     - **Upcoming Interviews List:** `upcomingInterviews` (ordered chronological array of future interview rounds including candidate name, email, job title, and round name).
+3. **Scoped Interviews Endpoint (`GET /api/interviews`):**
+   - When called by an `INTERVIEWER`, filters records using `{ where: { interviewerId: req.user.userId } }`, ensuring interviewers only see their own assigned interviews under "My Interviews" and cannot access other interviewers' schedules.
+   - When called by a `RECRUITER`, returns all global scheduled interviews.
+4. **Today's Interviews Prioritization:** The interviewer dashboard API returns `todayInterviews` alongside aggregate metrics. When interviews occur today, the frontend displays a dedicated, highlighted "Today's Interviews" grid with candidate details, round names, exact times, and quick access to candidate details.
+5. **Dashboard State Management & Error Handling:** The dashboard includes explicit loading (`isLoadingDashboard`) and error (`dashboardError`) states with retry functionality, preventing indefinite "Loading metrics..." stalls.
+
+
+
 
 
 

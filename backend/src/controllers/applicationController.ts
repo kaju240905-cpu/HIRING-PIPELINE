@@ -138,6 +138,13 @@ export const getApplicationById = async (req: Request, res: Response) => {
           include: {
             interviewer: {
               select: { id: true, email: true, role: true }
+            },
+            feedback: {
+              include: {
+                interviewer: {
+                  select: { id: true, email: true, role: true }
+                }
+              }
             }
           },
           orderBy: { scheduledAt: 'asc' }

@@ -40,6 +40,19 @@ enum ActionType {
   ARCHIVED
 }
 
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+}
+
+enum Recommendation {
+  STRONG_HIRE
+  HIRE
+  NEUTRAL
+  REJECT
+  STRONG_REJECT
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -51,6 +64,7 @@ model User {
   actionsPerformed     ApplicationHistory[]
   interviewsCreated    Interview[]             @relation("InterviewCreator")
   interviewsConducted  Interview[]             @relation("InterviewInterviewer")
+  feedbacksSubmitted   Feedback[]              @relation("FeedbackInterviewer")
 }
 
 model JobOpening {
@@ -104,18 +118,42 @@ model InterviewerAssignment {
 }
 
 model Interview {
-  id            String      @id @default(uuid())
+  id            String          @id @default(uuid())
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   interviewerId String
-  interviewer   User        @relation("InterviewInterviewer", fields: [interviewerId], references: [id], onDelete: Restrict)
+  interviewer   User            @relation("InterviewInterviewer", fields: [interviewerId], references: [id], onDelete: Restrict)
   roundTitle    String?
   scheduledAt   DateTime
-  createdAt     DateTime    @default(now())
+  status        InterviewStatus @default(SCHEDULED)
+  createdAt     DateTime        @default(now())
   createdBy     String
-  creator       User        @relation("InterviewCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  creator       User            @relation("InterviewCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  feedback      Feedback?
 
   @@index([applicationId])
+  @@index([interviewerId])
+  @@index([status])
+}
+
+model Feedback {
+  id                        String         @id @default(uuid())
+  interviewId               String         @unique
+  interview                 Interview      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewerId             String
+  interviewer               User           @relation("FeedbackInterviewer", fields: [interviewerId], references: [id], onDelete: Restrict)
+  technicalSkillsRating     Int
+  communicationSkillsRating Int
+  problemSolvingRating      Int
+  roleSpecificSkillsRating  Int
+  recommendation            Recommendation
+  strengths                 String
+  concerns                  String
+  comments                  String?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
   @@index([interviewerId])
 }
 

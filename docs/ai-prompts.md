@@ -689,6 +689,60 @@ Audit and resolve missing visible UI actions and backend routes for Job and Appl
 3. **Server Restart:** Terminated the stale node process on port 4000 and restarted the backend server with `npx tsx src/index.ts`.
 4. **Verification:** Created and executed an automated end-to-end HTTP test suite (`verify_e2e_archiving.ts`) confirming job archiving, job restoring, application archiving, application restoring, pipeline stage preservation, action blocking, and recruiter role enforcement.
 
+## 31. Interviewer-Specific Dashboard & Scoped Navigation
+
+### Goal
+Implement a dedicated Interviewer experience with scoped sidebar navigation (Dashboard, My Interviews, Sign Out) and personal interview metrics, while preserving all recruiter workflows.
+
+### Audit Findings
+1. The currently logged-in user's role is identified by JWT claims decoded in `authMiddleware.ts` into `req.user.role` (`RECRUITER` | `INTERVIEWER`) and stored in React state as `user.role`.
+2. The frontend sidebar previously displayed recruiter management views (Jobs, Applications, Pipeline) to interviewers, though actions were guarded.
+3. The dashboard endpoint (`GET /api/dashboard`) returned incomplete stage group counts for interviewers rather than actionable interview schedules.
+4. The global interviews endpoint (`GET /api/interviews`) returned all interviews without filtering by `interviewerId` when called by an interviewer.
+
+### Changes Made
+1. **Backend:**
+   - Updated `dashboardController.ts`: When `req.user.role === 'INTERVIEWER'`, queries interviews assigned to `req.user.userId` and returns `todayInterviewsCount`, `upcomingInterviewsCount`, `completedInterviewsCount`, and `upcomingInterviews` (with candidate and job details).
+   - Updated `interviewController.ts`: Filtered `listInterviews` by `{ interviewerId: req.user.userId }` when requested by an interviewer.
+   - Updated `authMiddleware.ts`: Extended `requireInterviewerAssignment` to check both `InterviewerAssignment` and direct `Interview` records.
+2. **Frontend:**
+   - Scoped sidebar navigation for interviewers to strictly: Dashboard, My Interviews, Sign Out.
+   - Replaced recruiter dashboard for interviewers with 3 metric cards (Today's Interviews, Upcoming Interviews, Completed Interviews) and an "Upcoming Interviews" table with "View Details" action.
+   - Customized the Interviews page for interviewers to display "My Interviews".
+   - Added view guard preventing interviewers from viewing unauthorized routes.
+3. **Verification:**
+   - Ran `npx tsc --noEmit` on backend (passed with 0 errors).
+   - Ran `npm run build` on frontend (passed with 0 errors).
+   - Executed live HTTP E2E tests verifying interviewer metrics, interview scoping, recruiter privilege barriers, and data isolation.
+
+## 32. Fix Interviewer Dashboard "View Candidate" Flow & Application Details Modal Mounting
+
+### Goal
+Fix the non-functioning "View Candidate →" buttons on the Interviewer Dashboard (both in "Today's Interviews" and "Upcoming Interviews") so interviewers can seamlessly view details of candidates assigned to their interviews, while strictly enforcing assignment-based access and preserving recruiter functionality.
+
+### Root Cause
+1. In `frontend/src/App.tsx`, the `selectedApplication` modal (and related sub-modals) was defined exclusively inside the JSX return branch of `case 'applications':`.
+2. When an interviewer logged in and viewed the Dashboard (`view === 'dashboard'`), `case 'applications':` was never rendered by `renderContent()`.
+3. Clicking "View Candidate →" correctly invoked `loadApplicationDetails(item.applicationId)` and fetched the candidate details from `GET /api/applications/:id`, but the modal failed to appear on screen because it was conditionally unmounted within an inactive view.
+
+### Changes Made
+1. **Frontend Architecture (`frontend/src/App.tsx`):**
+   - Extracted `selectedApplication` modal, `showAdvanceModal`, `showAdditionalInterviewModal`, and `archiveConfirmApp` into a top-level `renderApplicationModals()` helper.
+   - Mounted `{renderApplicationModals()}` at the root level of the main layout, alongside `{renderContent()}`, ensuring candidate details can be viewed from any active tab (Dashboard, Interviews, Applications, Pipeline, Jobs).
+   - Guarded the "Recruiter Actions" section inside the Application Details modal with `{user.role === 'RECRUITER' && (...)}`, ensuring interviewers only see candidate info, job details, interview schedules, feedback, and application history without exposing recruiter management controls.
+   - Enhanced error handling in `loadApplicationDetails` to gracefully handle HTTP 403 (unassigned access), HTTP 404, and network errors without leaving the UI stuck.
+2. **Security & Authorization Verification:**
+   - Verified that `backend/src/middleware/authMiddleware.ts` enforces `requireInterviewerAssignment` on `GET /api/applications/:id`.
+   - Verified that interviewers assigned via `InterviewerAssignment` or direct `Interview` can view their candidates, while unassigned candidate access correctly returns HTTP 403 Forbidden.
+3. **Verification:**
+   - Tested candidate retrieval for both Today's Interviews and Upcoming Interviews.
+   - Verified HTTP 403 for unauthorized candidate access by other interviewers.
+   - Confirmed recruiter unrestricted access and management workflows remain intact.
+   - `npx tsc --noEmit` on backend: 0 errors.
+   - `npm run build` on frontend: 0 errors.
+
+
+
 
 
 
